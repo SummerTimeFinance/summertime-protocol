@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20Detailed.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Capped.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -24,7 +25,7 @@ contract SummerTimeLemonToken is ERC20, ERC20Permit, ERC20Capped, Ownable {
     mapping (Allocations => uint256) public Tokenomics;
 
     constructor()
-        ERC20("SummerTime Lemons", "LEMON")
+        ERC20Detailed("SummerTime Lemons", "LEMON", 18)
         ERC20Permit("SummerTime Lemons")
         // Maximum token cap is 500M
         ERC20Capped(500 * oneMillion * 10 ** decimals())
@@ -50,7 +51,16 @@ contract SummerTimeLemonToken is ERC20, ERC20Permit, ERC20Capped, Ownable {
     }
 
     function _mint(address account, uint256 amount) internal override(ERC20, ERC20Capped) {
-        require(ERC20.totalSupply() + amount <= cap(), "LEMON ERC20Capped: cap exceeded");
+        require(ERC20.totalSupply() + amount <= cap(), "LEMON ERC20Capped: Max cap exceeded");
         super._mint(account, amount);
     }
+
+    function transfer(address recipient, uint256 amount) public override returns (bool) {
+        require(recipient != address(this));
+        return super.transfer(recipient, amount);
+    }
+
+    // function updateTokenomics(Allocations alloc, uint256 amount) public onlyOwner return (Boolean) {
+    //   Tokenomics[alloc] = amount ** decimalsPlaces18;
+    // }
 }
