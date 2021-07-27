@@ -11,10 +11,14 @@ indent_size = 4
 trim_trailing_whitespace = true
 insert_final_newline = true
 
-[*.{js,vue,yml,yaml,sol}]
+[*.{js,vue,yml,yaml}]
 indent_style = space
 indent_size = 2
 
 [*.{md,jade,pug}]
 indent_size = 4
 trim_trailing_whitespace = false
+
+[*.{sol}]
+indent_style = tab
+indent_size = 4

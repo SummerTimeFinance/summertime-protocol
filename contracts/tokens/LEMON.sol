@@ -22,15 +22,15 @@ contract SummerTimeLemonToken is ERC20, ERC20Permit, ERC20Capped, Ownable {
     uint256 private immutable decimalsPlaces18;
 
     // SummerTime Finance LEMONS tokenomics
-    mapping (Allocations => uint256) public Tokenomics;
+    mapping(Allocations => uint256) public Tokenomics;
 
     constructor()
         ERC20Detailed("SummerTime Lemons", "LEMON", 18)
         ERC20Permit("SummerTime Lemons")
         // Maximum token cap is 500M
-        ERC20Capped(500 * oneMillion * 10 ** decimals())
+        ERC20Capped(500 * oneMillion * 10**decimals())
     {
-        decimalsPlaces18 = 10 ** decimals();
+        decimalsPlaces18 = 10**decimals();
 
         // Maximum token cap is 500M
         Tokenomics[Allocations.MAXIMUM_SUPPLY] = 500 * oneMillion;
@@ -42,20 +42,30 @@ contract SummerTimeLemonToken is ERC20, ERC20Permit, ERC20Capped, Ownable {
         Tokenomics[Allocations.FOUNDATION] = 50 * oneMillion;
 
         // TypeError: decimalsPlaces18 Immutable variables cannot be read during contract creation time
-        _mint(msg.sender, Tokenomics[Allocations.PRESALE] * 10 ** decimals());
+        _mint(msg.sender, Tokenomics[Allocations.PRESALE] * 10**decimals());
     }
 
     // TIP: Removed "virtual" to disallow any overriding of this function again
     function cap() public view override(ERC20Capped) returns (uint256) {
-        return Tokenomics[Allocations.MAXIMUM_SUPPLY] * 10 ** decimals();
+        return Tokenomics[Allocations.MAXIMUM_SUPPLY] * 10**decimals();
     }
 
-    function _mint(address account, uint256 amount) internal override(ERC20, ERC20Capped) {
-        require(ERC20.totalSupply() + amount <= cap(), "LEMON ERC20Capped: Max cap exceeded");
+    function _mint(address account, uint256 amount)
+        internal
+        override(ERC20, ERC20Capped)
+    {
+        require(
+            ERC20.totalSupply() + amount <= cap(),
+            "LEMON ERC20Capped: Max cap exceeded"
+        );
         super._mint(account, amount);
     }
 
-    function transfer(address recipient, uint256 amount) public override returns (bool) {
+    function transfer(address recipient, uint256 amount)
+        public
+        override
+        returns (bool)
+    {
         require(recipient != address(this));
         return super.transfer(recipient, amount);
     }
