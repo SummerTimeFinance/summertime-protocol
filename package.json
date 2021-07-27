@@ -1,13 +1,19 @@
 {
   "name": "summertime-protocol",
-  "version": "1.0.0",
-  "description": "",
+  "version": "0.1.0",
+  "description": "**SummerTime Finance** is a decentralised stablecoin lending protocol leveraging over-collateralization of inaccessible or illiquid capital, with gamification using NFTs to spice things up.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "DeFi",
+    "Summertime",
+    "Finance",
+    "LEMON",
+    "SHELL"
+  ],
+  "author": "https://twitter.com/0xNumbuhFive",
   "license": "BUSL1.1",
   "devDependencies": {
     "@truffle/hdwallet-provider": "^1.4.1",
@@ -15,7 +21,11 @@
     "truffle": "^5.4.0"
   },
   "dependencies": {
+    "@chainlink/contracts": "^0.2.1",
     "@openzeppelin/contracts": "^4.2.0",
+    "@studydefi/money-legos": "^2.4.2",
+    "@uniswap/v2-core": "^1.0.1",
+    "@uniswap/v2-periphery": "^1.1.0-beta.0",
     "uuid": "^3.3.3",
     "web3": "^1.4.0"
   }

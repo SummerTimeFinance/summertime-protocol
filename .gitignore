@@ -19,8 +19,11 @@ app.staging.yaml
 app.prod.yaml
 app.goerli.yaml
 app.rinkeby.yaml
+app.bsc.testnet.yaml
+app.bsc.mainnet.yaml
 .idea
 secrets.json
+soljson-v*
 
 ### Bower ###
 bower_components
