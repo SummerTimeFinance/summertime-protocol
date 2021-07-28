@@ -4,30 +4,47 @@ pragma solidity ^0.6.6;
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract VaultCollateralConfig is Ownable {
-    struct VaultInformation {
+    struct VaultConfig {
         // eg. CAKE/BNB
-        string collateralName;
+        string collateralDisplayName;
         // The LP Collateral token address accepted by the platform
         address collateralTokenAddress;
         // The address where all the collateral is deposited at
         address collateralAddress;
-        // Is the vault a single asset collateral vault
+        // Is the vault a single asset collateral vault; only SET once
         // eg. we can accept USDC only vaults, to help stabalize the SHELL stablecoin
         bool isSingleAssetCollateralVault;
         // The token addresses of the tokens paired together in the AMM
         address token0;
         address token1;
-        // The name of the each of the tokens in the pair
-        string token0Name;
-        string token1Name;
+        // The name of the each of the tokens in the pair, not required
+        // Can be inferred from the frontend configuration
+        // string token0Name;
+        // string token1Name;
         // The Pancake or MasterChef address being used for staking the LP
         address stakingAddress;
-        // The strategy address used by SummerTime for compounding
+        // The strategy address for this vault used by SummerTime for compounding
         address strategyAddress;
         // The price oracle to get the PRICE of the LP tokens using the fair price
-        // https://github.com/AlphaFinanceLab/alpha-homora-v2-contract/blob/master/contracts/oracle/UniswapV2Oracle.sol
         address priceOracleAddress;
         // Backup price oracle if the main one fails, may use for Uniswapv2 TWAP oracles
-        address secondaryPriceOracleAddress;
+        address priceOracle2Address;
+        // This collateral vault specific debt ceiling, the default 0 means its unlimited
+        uint256 debtCeiling;
+        // Default will be 50%, meaning user can borrow only up to 50% of their collateral value
+        // Set to 51 to allow user to actually borrow up to 50% of it
+        uint256 minimumDebtCollateralRatio;
+        // The current ratio, got from: debt / deposits
+        uint256 currentDebtCollateralRatio;
+        // Initially value will be $1000, if set to 0, it means it's unlimited
+        uint256 maxCollateralAmountAccepted;
+        // Both initialized with 0;
+        uint256 currentTotalDepositedAmount;
+        uint256 currentTotalDebtBorrowed;
+        // For pausing depositing or borrowing, incase there is a need to do so
+        bool depositingPaused;
+        bool borrowingPaused;
+        // When disabled, ONLY repayments, and withdrawals will be permitted
+        bool disabled;
     }
 }

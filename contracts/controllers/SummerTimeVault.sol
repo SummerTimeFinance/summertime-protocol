@@ -2,36 +2,34 @@
 pragma solidity ^0.6.6;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-// import '@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol';
+import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
+import "@uniswap/v2-periphery/contracts/libraries/UniswapV2Library.sol";
 
 import "../controllers/UserVault.sol";
 import "../config/VaultConfig.sol";
 
-contract SummerTimeVault is Ownable, VaultCollateralConfig, UserVault {
-    struct GeneralVaultInfo {
-        // This collateral vault specific debt ceiling
-        uint256 vaultDebtCeiling;
-        // Default will be 50%, meaning user can borrow only up to 50% of their collateral value
-        // Set to 51 to allow user to actually borrow up to 50% of it
-        uint256 minimumDebtCollateralRatio;
-        // Initially set to worth $1000, if 0, it means it's unlimited
-        uint256 maximumAmountOfCollateralAccepted;
-        // Both initialized with 0;
-        uint256 currentTotalCollateralDeposited;
-        uint256 currentTotalDebtBorrowed;
-        // For pausing depositing or borrowing, incase there is a need to do so
-        bool depositingPaused;
-        bool borrowingPaused;
-        // is this specific collateral vault disabled
-        bool disabled;
-    }
-
+contract SummmerTimeVault is Ownable, VaultCollateralConfig, UserVault {
+    mapping(address => VaultConfig) internal vaultAvailable;
+    // The following collateral addresses will be supported (progressively):
+    // BTCB-ETH (old is gold, proven) [127M]
+    // BTCB-BUSD [118M]
+    // ETH-BNB [139M]
+    // BTCB-BNB [118M]
+    // BUSD-BNB [460M]
+    // USDT-BNB [230M]
+    // CAKE-BNB (has largest liquidity) [600M]
+    // Stablecoin LPs:
+    // USDC-BUSD [122M]
+    // USDT-BUSD [289M]
+    // USDC-USDT [90M]
+    // Total addressable market size: $2.2B (BSC, using PancakeSwap only)
+    // current collaterals that are accepted
     address[] internal vaultCollateralAddresses;
-    mapping(address => VaultInformation) internal vaultInformation;
-    mapping(address => GeneralVaultInfo) internal generalVaultInfo;
 
-    modifier vaultCollateralExists(address collateralAddress) {
+    address private immutable uniswapFactoryAddress;
+
+    modifier vaultTypeExists(address collateralAddress) {
         bool memory collateralExists = false;
         for (
             int256 index = 0;
@@ -46,108 +44,208 @@ contract SummerTimeVault is Ownable, VaultCollateralConfig, UserVault {
 
         require(
             collateralExist,
-            "vaultCollateralExists: COLLATERAL NOT AVAILABLE FOR BORROWING AGAINST"
+            "vaultTypeExists: COLLATERAL not available to borrow against."
         );
         _;
     }
 
-    // token0Name, token1Name, token0, token1 can all be derived from the UniswapV2 interface
-    constructor(
-        string collateralDisplayName,
-        address collateralTokenAddress,
-        address collateralAddress,
-        address stakingAddress,
-        address strategyAddress,
-        address priceOracleAddress
-    ) {
-        require(
-            bytes(collateralDisplayName).length > 0,
-            "VAULT: collateralDisplayName not provided"
-        );
-        require(
-            address(collateralTokenAddress) != address(0),
-            "VAULT: collateralTokenAddress not provided"
-        );
-        // require(address(stakingAddress) != address(0), "VAULT: stakingAddress not provided");
-        // require(address(strategyAddress) != address(0), "VAULT: strategyAddress not provided");
-        require(
-            address(priceOracleAddress) != address(0),
-            "VAULT: priceOracleAddress not provided"
-        );
-
-        IUniswapV2Pair tokenPairsForLP = IUniswapV2Pair(collateralTokenAddress);
-        token0 = tokenPairsForLP.token0();
-        token1 = tokenPairsForLP.token1();
+    constructor(address uniswapFactoryAddress_) internal {
+        if (uniswapFactoryAddress_ == address(0)) {
+            revert("SummerTimeVaultInit: Invalid factory address provided.");
+        }
+        uniswapFactoryAddress = uniswapFactoryAddress_;
     }
 
-    function setCollateralName(
+    function createNewCollateralVault(
+        string collateralDisplayName,
+        address token0Address,
+        address token1Address,
+        // address collateralAddress,
+        // address stakingAddress,
+        // address strategyAddress,
+        address priceOracleAddress
+    ) external onlyOwner returns (VaultConfig) {
+        if (bytes(collateralDisplayName).length > 0) {
+            revert(
+                "createNewCollateralVault: collateralDisplayName not provided"
+            );
+        }
+        if (address(token0Address) != address(0)) {
+            revert("createNewCollateralVault: token0Address not provided");
+        }
+        if (address(token1Address) != address(0)) {
+            revert("createNewCollateralVault: token1Address not provided");
+        }
+        if (address(priceOracleAddress) != address(0)) {
+            revert("createNewCollateralVault: priceOracleAddress not provided");
+        }
+
+        address addressForLPPair = UniswapV2Library.pairFor(
+            uniswapFactoryAddress,
+            token0Address,
+            token1Address
+        );
+        IUniswapV2Pair tokenPairsForLP = IUniswapV2Pair(addressForLPPair);
+        if (addressForLPPair == address(0))
+            revert("LP Pair address doesn't EXIST");
+
+        address token0 = tokenPairsForLP.token0();
+        address token1 = tokenPairsForLP.token1();
+
+        VaultConfig storage vault = vaultAvailable[addressForLPPair];
+        // Check if the vault exists already
+        if (vault.collateralAddress != address(0)) {
+            revert("createNewCollateralVault: VAULT EXISTS");
+        }
+
+        // Add vault collateral address to accepted collateral types
+        vaultCollateralAddresses.push(addressForLPPair);
+
+        // token0, token1 can all be derived from the UniswapV2 interface
+        vault = VaultConfig({
+            collateralDisplayName: collateralDisplayName,
+            collateralTokenAddress: addressForLPPair,
+            token0: token0Address,
+            token1: token1Address,
+            priceOracleAddress: priceOracleAddress,
+            minimumDebtCollateralRatio: 50 * 10**18,
+            maxCollateralAmountAccepted: 1000 * 10**18
+        });
+
+        return vault;
+    }
+
+    function updateCollateralName(
         address collateralAddress,
         string newCollateralDisplayName
-    ) public onlyOwner vaultCollateralExists(collateralAddress) returns (bool) {
+    ) external onlyOwner vaultTypeExists(collateralAddress) returns (bool) {
         if (bytes(newCollateralDisplayName).length > 0) return false;
-        VaultInformation storage vault = vaultInformation[collateralAddress];
+        VaultConfig storage vault = vaultAvailable[collateralAddress];
         vault.collateralDisplayName = newCollateralDisplayName;
         return true;
     }
 
-    function setStakingAddress(
+    function updateStakingAddress(
         address collateralAddress,
         address newStakingAddress
-    ) public onlyOwner vaultCollateralExists(collateralAddress) returns (bool) {
-        VaultInformation storage vault = vaultInformation[collateralAddress];
-        // TODO: Check the previous staking address doesnt have tokens with it already
-        // If it does, unstake those tokens and migrate them to the new stakingAddress
+    ) external onlyOwner vaultTypeExists(collateralAddress) returns (bool) {
+        VaultConfig storage vault = vaultAvailable[collateralAddress];
+        // TODO: unstake those tokens and migrate them to the new stakingAddress
         vault.stakingAddress = newStakingAddress;
+        emit VaultStakingAddressUpdated(newStakingAddress);
         return true;
     }
 
-    function setStrategyAddress(
+    function updateStrategyAddress(
         address collateralAddress,
         address newStrategyAddress
-    ) public onlyOwner vaultCollateralExists(collateralAddress) returns (bool) {
-        VaultInformation storage vault = vaultInformation[collateralAddress];
+    ) external onlyOwner vaultTypeExists(collateralAddress) returns (bool) {
+        VaultConfig storage vault = vaultAvailable[collateralAddress];
         vault.strategyAddress = newStrategyAddress;
         return true;
     }
 
-    function setPriceOracleAddress(
+    function updatePriceOracleAddress(
         address collateralAddress,
         address newPriceOracleAddress
-    ) public onlyOwner vaultCollateralExists(collateralAddress) returns (bool) {
-        VaultInformation storage vault = vaultInformation[collateralAddress];
+    ) external onlyOwner vaultTypeExists(collateralAddress) returns (bool) {
+        VaultConfig storage vault = vaultAvailable[collateralAddress];
         vault.priceOracleAddress = newPriceOracleAddress;
+        emit VaultPriceOracleAddressUpdated(newPriceOracleAddress);
         return true;
     }
 
-    function transferUserDebtFromVault(
-        address newVaultOwnerAddress,
-        address collateralAddress
-    ) external onlyVaultOwner returns (bool) {
-        UserVaultInfo storage userVaultInfo = userVaults[msg.sender];
-        UserVaultInfo storage newVaultOwnerInfo = userVaults[
-            newVaultOwnerAddress
-        ];
+    function updatePriceOracle2Address(
+        address collateralAddress,
+        address newPriceOracle2Address
+    ) external onlyOwner vaultTypeExists(collateralAddress) returns (bool) {
+        VaultConfig storage vault = vaultAvailable[collateralAddress];
+        vault.priceOracle2Address = newPriceOracle2Address;
+        emit VaultPriceOracle2AddressUpdated(newPriceOracle2Address);
+        return true;
+    }
 
-        // If the new user doesn't have a vault, create one on the go
-        if (newVaultOwnerInfo.ID == 0) {
-            super.createUserVault(newVaultOwnerAddress);
-        }
+    function updateDebtCeiling(
+        address collateralAddress,
+        uint256 newDebtCeilingAmount
+    ) external onlyOwner vaultTypeExists(collateralAddress) returns (bool) {
+        VaultConfig storage vault = vaultAvailable[collateralAddress];
+        vault.debtCeiling = newDebtCeilingAmount;
+        emit VaultDebtCeilingUpdated(newDebtCeilingAmount);
+        return true;
+    }
 
-        // TODO:
-        // get user's debt/collateral ratio,
-        // then migrate the debt to the new vault along with enough collateral
-        // according to the user's debt/collateral ratio
+    function updateDebtCollateralRatio(
+        address collateralAddress,
+        uint256 newDebtCollateralRatio
+    ) external onlyOwner vaultTypeExists(collateralAddress) returns (bool) {
+        VaultConfig storage vault = vaultAvailable[collateralAddress];
+        vault.minimumDebtCollateralRatio = newDebtCollateralRatio;
+        emit VaultDebtCollateralRatioUpdated(newDebtCollateralRatio);
+        return true;
+    }
+
+    function updateMaxCollateralAmountAccepted(
+        address collateralAddress,
+        uint256 newMaxCollateralAmountAccept
+    ) external onlyOwner vaultTypeExists(collateralAddress) returns (bool) {
+        VaultConfig storage vault = vaultAvailable[collateralAddress];
+        vault.maxCollateralAmountAccepted = newMaxCollateralAmountAccept;
+        emit VaultMaxCollateralAmountAcceptedUpdated(
+            newMaxCollateralAmountAccept
+        );
+        return true;
+    }
+
+    // Enable or disable the vault
+    function toggleVaultActiveState(address collateralAddress)
+        external
+        onlyOwner
+        vaultTypeExists(collateralAddress)
+        returns (bool)
+    {
+        VaultConfig storage vault = vaultAvailable[collateralAddress];
+        vault.disabled = !vault.disabled;
+        emit CollateralVaultState(collateralAddress, vault.disabled);
+        return vault.disabled;
+    }
+
+    function toggleDepositingState(address collateralAddress)
+        external
+        onlyOwner
+        vaultTypeExists(collateralAddress)
+        returns (bool)
+    {
+        VaultConfig storage vault = vaultAvailable[collateralAddress];
+        vault.depositingPaused = !vault.depositingPaused;
+        emit VaultDepositingState(vault.depositingPaused);
+        return vault.depositingPaused;
+    }
+
+    function toggleBorrowingState(address collateralAddress)
+        external
+        onlyOwner
+        vaultTypeExists(collateralAddress)
+        returns (bool)
+    {
+        VaultConfig storage vault = vaultAvailable[collateralAddress];
+        vault.borrowingPaused = !vault.borrowingPaused;
+        emit VaultBorrowingState(vault.borrowingPaused);
+        return vault.borrowingPaused;
     }
 
     event NewCollateralVaultAvailable(
-        address vaultCollateralAddress,
+        address collateralAddress,
         address token0,
         address token1
     );
-    // @dev: if borrowingDisabled is left in default mode (false),
-    // then it's deposits that have been disabled
-    event CollateralVaultDisabled(
-        address vaultCollateralAddress,
-        bool borrowingDisabled
-    );
+    event CollateralVaultState(address collateralAddress, bool isDisabled);
+    event VaultStakingAddressUpdated(address newStakingAddress);
+    event VaultPriceOracleAddressUpdated(address newPriceOracleAddress);
+    event VaultPriceOracle2AddressUpdated(address newPriceOracle2Address);
+    event VaultDebtCeilingUpdated(uint256 newDebtCeiling);
+    event VaultDebtCollateralRatioUpdated(uint256 newDebtCollateralRatio);
+    event VaultMaxCollateralAmountUpdated(uint256 newMaxCollateralAmount);
+    event VaultDepositingState(bool isDisabled);
+    event VaultBorrowingState(bool isDisabled);
 }
