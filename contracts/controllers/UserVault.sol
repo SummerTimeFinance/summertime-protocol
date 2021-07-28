@@ -11,18 +11,21 @@ contract UserVault {
         uint256 ID;
         // A user can deposit more that 1 collateral to borrow against
         mapping(address => uint256) tokenCollateralAmount;
+        // Calculated on each deposit, withdawal, borrowing and repayment
+        uint256 collateralValueAmount;
         uint256 debtBorrowedAmount;
         uint256 debtCollateralRatio;
         bool softDeleted;
     }
+
     mapping(address => UserVaultInfo) internal userVaults;
-    // address[] internal vaultCurrentUsers;
+    address[] internal vaultCurrentUsers;
 
     modifier onlyVaultOwner(uint256 vaultID) {
-        UserVaultInfo storage userVaultInfo = userVaults[msg.sender];
+        UserVaultInfo storage userVault = userVaults[msg.sender];
         require(
-            userVaultInfo.ID == 0 || userVaultInfo.softDeleted == true,
-            "onlyVaultOwner: VAULT DOESNT EXISTS"
+            userVault.ID != 0 || userVault.softDeleted != true,
+            "onlyVaultOwner: VAULT DOES NOT EXISTS"
         );
         _;
     }
@@ -32,21 +35,21 @@ contract UserVault {
     ) external returns (uint256 createdVaultId) {
         address memory userVaultAddress = userAddress || msg.sender;
         // Check if the user has already created a vault with us
-        UserVaultInfo storage userVaultInfo = userVaults[userVaultAddress];
+        UserVaultInfo storage userVault = userVaults[userVaultAddress];
         require(
-            userVaultInfo.ID == 0 && userVaultInfo.softDeleted == false,
+            userVault.ID == 0 && userVault.softDeleted == false,
             "createUserVault: VAULT EXISTS"
         );
 
-        if (userVaultInfo.ID == 0) {
+        if (userVault.ID == 0) {
             uint256 memory createdVaultId = vaultIDCount++; // createdVaultId is return variable
-            userVaultInfo.ID = createdVaultId;
-            // userVaultInfo.tokenCollateralAmount[collateralType] = 0;
+            userVault.ID = createdVaultId;
+            // userVault.tokenCollateralAmount[collateralType] = 0;
             vaultCurrentUsers.push(userVaultAddress);
             emit UserVaultCreated(createdVaultId, userVaultAddress, false);
         } else {
-            // If the vault exits, just undelete it
-            userVaultInfo.softDeleted = false;
+            // If the vault exits, just "undelete" it
+            userVault.softDeleted = false;
             emit UserVaultCreated(createdVaultId, userVaultAddress, true);
         }
         return createdVaultId;
@@ -55,9 +58,9 @@ contract UserVault {
     function transferUserVault(address newVaultOwnerAddress)
         external
         onlyVaultOwner
-        returns (bool)
+        returns (uint256)
     {
-        UserVaultInfo storage userVaultInfo = userVaults[msg.sender];
+        UserVaultInfo storage userVault = userVaults[msg.sender];
         UserVaultInfo storage newVaultOwnerInfo = userVaults[
             newVaultOwnerAddress
         ];
@@ -66,27 +69,41 @@ contract UserVault {
             revert("transferUserVault: NEW OWNER ALREADY HAS A VAULT");
         }
 
-        newVaultOwnerInfo = userVaultInfo;
+        newVaultOwnerInfo = userVault;
         delete userVaults[msg.sender];
-        return true;
+        emit UserVaultTransfered(
+            userVault.ID,
+            msg.sender,
+            newVaultOwnerAddress
+        );
+        return userVault.ID;
     }
 
-    function destroyUserVault() external onlyVaultOwner returns (bool) {
-        UserVaultInfo storage userVaultInfo = userVaults[msg.sender];
-        // Ensure user's SHELL DEBT is 0 (fully paid back)
+    function destroyUserVault()
+        external
+        onlyVaultOwner
+        returns (uint256, bool)
+    {
+        UserVaultInfo storage userVault = userVaults[msg.sender];
+        // Ensure user's $SHELL DEBT is 0 (fully paid back)
         require(
-            userVaultInfo.debtBorrowedAmount == 0,
+            userVault.debtBorrowedAmount == 0,
             "destroyUserVault: VAULT STILL HAS DEBT"
         );
         userVaults[msg.sender].softDeleted = true;
-        return true;
+        emit UserVaultDestroyed(userVault.ID, msg.sender);
+        return (userVault.ID, true);
     }
 
-    event UserVaultCreated(uint256 newVaultID, address user, bool unarchived);
+    event UserVaultCreated(
+        uint256 newVaultID,
+        address vaultOwnerAddress,
+        bool unarchived
+    );
     event UserVaultTransfered(
         uint256 vaultID,
-        address oldUserAddress,
-        address newUserAddress
+        address oldVaultOwnerAddress,
+        address newVaultOwnerAddress
     );
-    event UserVaultDestroyed(uint256 vauldID, address user);
+    event UserVaultDestroyed(uint256 vauldID, address vaultOwnerAddress);
 }
