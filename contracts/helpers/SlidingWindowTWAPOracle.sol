@@ -1,12 +1,11 @@
-pragma solidity =0.6.6;
+pragma solidity ^0.6.6;
 
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
+import "@uniswap/v2-periphery/contracts/libraries/UniswapV2Library.sol";
+import "@uniswap/v2-periphery/contracts/libraries/UniswapV2OracleLibrary.sol";
 import "@uniswap/lib/contracts/libraries/FixedPoint.sol";
-
-import "../libraries/SafeMath.sol";
-import "../libraries/UniswapV2Library.sol";
-import "../libraries/UniswapV2OracleLibrary.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
 
 // sliding window oracle that uses observations collected over a window to provide moving price averages in the past
 // `windowSize` with a precision of `windowSize / granularity`
@@ -127,8 +126,8 @@ contract ExampleSlidingWindowOracle {
     // update must have been called for the bucket corresponding to timestamp `now - windowSize`
     function consult(
         address tokenIn,
-        uint256 amountIn,
-        address tokenOut
+        address tokenOut,
+        uint256 amountIn
     ) external view returns (uint256 amountOut) {
         address pair = UniswapV2Library.pairFor(factory, tokenIn, tokenOut);
         Observation storage firstObservation = getFirstObservationInWindow(

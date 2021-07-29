@@ -5,6 +5,13 @@ contract SummerTimeCoreConfig {
     // Initial protocol-WIDE DEBT ceiling is: $100,000
     uint256 public summerTimeDebtCeiling = 100000;
 
+    // The base can be used to calculate a new CCR for a new vault,
+    // or updating an existing one, equal to 100%
+    uint256 public constant baseDebtCollateralRatio = 100;
+
+    // Default CCR: 150%
+    uint256 public defaultDebtCollateralRatio = 150;
+
     // Vault liquidation incentive: 5%
     uint256 public constant liquidationIncentive = 5;
 
