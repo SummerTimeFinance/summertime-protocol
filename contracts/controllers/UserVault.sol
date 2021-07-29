@@ -10,7 +10,7 @@ contract UserVault {
     struct UserVaultInfo {
         uint256 ID;
         // A user can deposit more that 1 collateral to borrow against
-        mapping(address => uint256) tokenCollateralAmount;
+        mapping(address => uint256) collateralAmount;
         // Calculated on each deposit, withdawal, borrowing and repayment
         uint256 collateralValueAmount;
         uint256 debtBorrowedAmount;

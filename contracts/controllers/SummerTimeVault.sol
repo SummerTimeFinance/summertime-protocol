@@ -60,6 +60,7 @@ contract SummmerTimeVault is Ownable, VaultCollateralConfig, UserVault {
         string collateralDisplayName,
         address token0Address,
         address token1Address,
+        uint minimumDebtCollateralRatio,
         // address collateralAddress,
         // address stakingAddress,
         // address strategyAddress,
@@ -108,7 +109,7 @@ contract SummmerTimeVault is Ownable, VaultCollateralConfig, UserVault {
             token0: token0Address,
             token1: token1Address,
             priceOracleAddress: priceOracleAddress,
-            minimumDebtCollateralRatio: 50 * 10**18,
+            minimumDebtCollateralRatio: minimumDebtCollateralRatio || 50 * 10**17, // default: 1.5
             maxCollateralAmountAccepted: 1000 * 10**18
         });
 

@@ -3,10 +3,10 @@ pragma solidity ^0.6.6;
 
 contract SummerTimeCoreConfig {
     // Initial protocol-WIDE DEBT ceiling is: $100,000
-    uint256 public summerTimeTotalDebtCeiling = 100000;
+    uint256 public summerTimeDebtCeiling = 100000;
 
     // Vault liquidation incentive: 5%
-    uint256 public constant liquidationIncentive = 500;
+    uint256 public constant liquidationIncentive = 5;
 
     // The portion of accrued interest that goes into reserves, initial set to: 0.10%
     uint256 reserveFactor = 10;

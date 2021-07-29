@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract ShellStableCoin is ERC20, ERC20Permit, ERC20Capped, Ownable {
-    uint256 private immutable decimalsPlaces18;
+    uint256 internal immutable decimalsPlaces18;
 
     constructor(uint256 debtCeilingAmount)
         ERC20Detailed("SummerTime Shell Stablecoin", "SHELL", 18)
