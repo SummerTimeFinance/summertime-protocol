@@ -29,29 +29,29 @@ contract PriceOracle is Ownable {
     // constructor() public { }
 
     // @dev: Returns the last stored price
-    function getTokenThePrice(address _token) external view returns (uint256) {
-        PriceInfo storage _tokenPriceFeed = tokenPriceFeed[_token];
-        require(_tokenPriceFeed.price > 0, "PRICE: token price can not be 0");
-        return _tokenPriceFeed.price;
+    function getLastTokenPrice(address _token) external view returns (uint256) {
+        PriceInfo storage tokenPriceInfo = tokenPriceFeed[_token];
+        require(tokenPriceInfo.price > 0, "PRICE: token price can not be 0");
+        return tokenPriceInfo.price;
     }
 
     function fetchCurrentTokenPrice(address _token) external returns (uint256) {
-        AggregatorV3Interface _tokenPriceFeed = tokenAggregator[_token];
+        AggregatorV3Interface tokenPriceInfo = tokenAggregator[_token];
         (
             uint80 roundID,
             int256 price,
             uint256 startedAt,
             uint256 timestamp,
             uint80 answeredInRound
-        ) = _tokenPriceFeed.latestRoundData();
+        ) = tokenPriceInfo.latestRoundData();
         uint256 priceToUint = SafeCast.toUint256(price);
 
         // Check if the price returned is 8 or 18 decimals places
         // Do all Chainlink feeds return prices with 8 decimals of precision?
         // https://ethereum.stackexchange.com/q/92508
-        if (_tokenPriceFeed.decimals() < 18) {
-            priceToUint = priceToUint.mul(decimalPlaces10);
-        }
+        // @borrow https://github.com/CreamFi/compound-protocol/blob/master/contracts/PriceOracleProxy.sol#L331
+        uint decimalPlaces = uint(18).sub(uint(tokenPriceInfo.decimals()));
+        priceToUint = priceToUint.mul(10**decimalPlaces);
 
         tokenPriceFeed[_token] = PriceInfo(
             roundID,
