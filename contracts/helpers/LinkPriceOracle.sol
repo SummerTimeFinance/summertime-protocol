@@ -35,7 +35,7 @@ contract PriceOracle is Ownable {
         return tokenPriceInfo.price;
     }
 
-    function fetchCurrentTokenPrice(address _token) external returns (uint256) {
+    function getCurrentTokenPrice(address _token) external returns (uint256) {
         AggregatorV3Interface tokenPriceInfo = tokenAggregator[_token];
         (
             uint80 roundID,
@@ -69,6 +69,6 @@ contract PriceOracle is Ownable {
         returns (uint256)
     {
         tokenAggregator[_token] = AggregatorV3Interface(_oracle);
-        return this.fetchCurrentTokenPrice(_token);
+        return this.getCurrentTokenPrice(_token);
     }
 }

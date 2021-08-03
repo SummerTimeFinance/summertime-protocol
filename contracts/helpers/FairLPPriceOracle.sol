@@ -19,7 +19,6 @@ contract FairLPPriceOracle is PriceOracle {
     // @param address The Uniswap token pair to check the value.
     function getLastLPTokenPrice(address pairAddress)
         external
-        view
         returns (uint256)
     {
         IUniswapV2Pair pairInfo = IUniswapV2Pair(pairAddress);
@@ -32,8 +31,8 @@ contract FairLPPriceOracle is PriceOracle {
             SafeMath.mul(reserveAmount0, reserveAmount1)
         );
 
-        uint256 tokenPrice0 = this.getLastTokenPrice(token0);
-        uint256 tokenPrice1 = this.getLastTokenPrice(token1);
+        uint256 tokenPrice0 = this.getCurrentTokenPrice(token0);
+        uint256 tokenPrice1 = this.getCurrentTokenPrice(token1);
         uint256 sqrtP = MathUtils.sqrt(SafeMath.mul(tokenPrice0, tokenPrice1));
 
         return
