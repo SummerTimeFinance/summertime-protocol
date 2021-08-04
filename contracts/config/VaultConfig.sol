@@ -25,10 +25,14 @@ contract VaultCollateralConfig is Ownable {
         address stakingAddress;
         // The strategy address for this vault used by SummerTime for compounding
         address strategyAddress;
+        // the current fair LP price
+        uint256 fairPrice;
         // The price oracle to get the PRICE of the LP tokens using the fair price
         address priceOracleAddress;
         // Backup price oracle if the main one fails, may use for Uniswapv2 TWAP oracles
         address priceOracle2Address;
+        // This collateral vault custom interest rate, if still 0, it uses the global one
+        uint256 interestRate;
         // This collateral vault specific debt ceiling, the default 0 means its unlimited
         uint256 debtCeiling;
         // Default will be 50%, meaning user can borrow only up to 50% of their collateral value
