@@ -10,7 +10,7 @@ import "../controllers/UserVault.sol";
 import "../config/VaultConfig.sol";
 
 contract SummmerTimeVault is Ownable, VaultCollateralConfig, UserVault {
-    mapping(address => VaultConfig) internal vaultAvailable;
+    address private immutable uniswapFactoryAddress;
     // The following collateral addresses will be supported (progressively):
     // BTCB-ETH (old is gold, proven) [127M]
     // BTCB-BUSD [118M]
@@ -25,11 +25,12 @@ contract SummmerTimeVault is Ownable, VaultCollateralConfig, UserVault {
     // USDC-USDT [90M]
     // Total addressable market size: $2.2B (BSC, using PancakeSwap only)
     // current collaterals that are accepted
+    mapping(address => VaultConfig) internal vaultAvailable;
     address[] internal vaultCollateralAddresses;
 
-    address private immutable uniswapFactoryAddress;
-
-    modifier vaultTypeExists(address collateralAddress) {
+    // Check to see if any of the collateral being deposited by the user
+    // is an accepted collateral by the protocol
+    modifier collateralAccepted(address collateralAddress) {
         bool memory collateralExists = false;
         for (
             int256 index = 0;
@@ -44,7 +45,7 @@ contract SummmerTimeVault is Ownable, VaultCollateralConfig, UserVault {
 
         require(
             collateralExist,
-            "vaultTypeExists: COLLATERAL not available to borrow against."
+            "collateralAccepted: COLLATERAL not available to borrow against."
         );
         _;
     }
@@ -121,7 +122,7 @@ contract SummmerTimeVault is Ownable, VaultCollateralConfig, UserVault {
     function updateCollateralName(
         address collateralAddress,
         string newCollateralDisplayName
-    ) external onlyOwner vaultTypeExists(collateralAddress) returns (bool) {
+    ) external onlyOwner collateralAccepted(collateralAddress) returns (bool) {
         if (bytes(newCollateralDisplayName).length > 0) return false;
         VaultConfig storage vault = vaultAvailable[collateralAddress];
         vault.collateralDisplayName = newCollateralDisplayName;
@@ -131,7 +132,7 @@ contract SummmerTimeVault is Ownable, VaultCollateralConfig, UserVault {
     function updateStakingAddress(
         address collateralAddress,
         address newStakingAddress
-    ) external onlyOwner vaultTypeExists(collateralAddress) returns (bool) {
+    ) external onlyOwner collateralAccepted(collateralAddress) returns (bool) {
         VaultConfig storage vault = vaultAvailable[collateralAddress];
         // TODO: unstake those tokens and migrate them to the new stakingAddress
         vault.stakingAddress = newStakingAddress;
@@ -142,7 +143,7 @@ contract SummmerTimeVault is Ownable, VaultCollateralConfig, UserVault {
     function updateStrategyAddress(
         address collateralAddress,
         address newStrategyAddress
-    ) external onlyOwner vaultTypeExists(collateralAddress) returns (bool) {
+    ) external onlyOwner collateralAccepted(collateralAddress) returns (bool) {
         VaultConfig storage vault = vaultAvailable[collateralAddress];
         vault.strategyAddress = newStrategyAddress;
         return true;
@@ -151,7 +152,7 @@ contract SummmerTimeVault is Ownable, VaultCollateralConfig, UserVault {
     function updatePriceOracleAddress(
         address collateralAddress,
         address newPriceOracleAddress
-    ) external onlyOwner vaultTypeExists(collateralAddress) returns (bool) {
+    ) external onlyOwner collateralAccepted(collateralAddress) returns (bool) {
         VaultConfig storage vault = vaultAvailable[collateralAddress];
         vault.priceOracleAddress = newPriceOracleAddress;
         emit VaultPriceOracleAddressUpdated(newPriceOracleAddress);
@@ -161,7 +162,7 @@ contract SummmerTimeVault is Ownable, VaultCollateralConfig, UserVault {
     function updatePriceOracle2Address(
         address collateralAddress,
         address newPriceOracle2Address
-    ) external onlyOwner vaultTypeExists(collateralAddress) returns (bool) {
+    ) external onlyOwner collateralAccepted(collateralAddress) returns (bool) {
         VaultConfig storage vault = vaultAvailable[collateralAddress];
         vault.priceOracle2Address = newPriceOracle2Address;
         emit VaultPriceOracle2AddressUpdated(newPriceOracle2Address);
@@ -171,7 +172,7 @@ contract SummmerTimeVault is Ownable, VaultCollateralConfig, UserVault {
     function updateDebtCeiling(
         address collateralAddress,
         uint256 newDebtCeilingAmount
-    ) external onlyOwner vaultTypeExists(collateralAddress) returns (bool) {
+    ) external onlyOwner collateralAccepted(collateralAddress) returns (bool) {
         VaultConfig storage vault = vaultAvailable[collateralAddress];
         vault.debtCeiling = newDebtCeilingAmount;
         emit VaultDebtCeilingUpdated(newDebtCeilingAmount);
@@ -181,7 +182,7 @@ contract SummmerTimeVault is Ownable, VaultCollateralConfig, UserVault {
     function updateDebtCollateralRatio(
         address collateralAddress,
         uint256 newDebtCollateralRatio
-    ) external onlyOwner vaultTypeExists(collateralAddress) returns (bool) {
+    ) external onlyOwner collateralAccepted(collateralAddress) returns (bool) {
         VaultConfig storage vault = vaultAvailable[collateralAddress];
         vault.minimumDebtCollateralRatio = newDebtCollateralRatio;
         emit VaultDebtCollateralRatioUpdated(newDebtCollateralRatio);
@@ -191,7 +192,7 @@ contract SummmerTimeVault is Ownable, VaultCollateralConfig, UserVault {
     function updateMaxCollateralAmountAccepted(
         address collateralAddress,
         uint256 newMaxCollateralAmountAccept
-    ) external onlyOwner vaultTypeExists(collateralAddress) returns (bool) {
+    ) external onlyOwner collateralAccepted(collateralAddress) returns (bool) {
         VaultConfig storage vault = vaultAvailable[collateralAddress];
         vault.maxCollateralAmountAccepted = newMaxCollateralAmountAccept;
         emit VaultMaxCollateralAmountAcceptedUpdated(
@@ -204,7 +205,7 @@ contract SummmerTimeVault is Ownable, VaultCollateralConfig, UserVault {
     function toggleVaultActiveState(address collateralAddress)
         external
         onlyOwner
-        vaultTypeExists(collateralAddress)
+        collateralAccepted(collateralAddress)
         returns (bool)
     {
         VaultConfig storage vault = vaultAvailable[collateralAddress];
@@ -216,7 +217,7 @@ contract SummmerTimeVault is Ownable, VaultCollateralConfig, UserVault {
     function toggleDepositingState(address collateralAddress)
         external
         onlyOwner
-        vaultTypeExists(collateralAddress)
+        collateralAccepted(collateralAddress)
         returns (bool)
     {
         VaultConfig storage vault = vaultAvailable[collateralAddress];
@@ -228,7 +229,7 @@ contract SummmerTimeVault is Ownable, VaultCollateralConfig, UserVault {
     function toggleBorrowingState(address collateralAddress)
         external
         onlyOwner
-        vaultTypeExists(collateralAddress)
+        collateralAccepted(collateralAddress)
         returns (bool)
     {
         VaultConfig storage vault = vaultAvailable[collateralAddress];
