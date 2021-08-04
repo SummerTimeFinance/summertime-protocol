@@ -26,7 +26,8 @@ contract FairLPPriceOracle is PriceOracle {
         address token1 = pairInfo.token1();
         uint256 totalSupply = pairInfo.totalSupply();
 
-        (uint256 reserveAmount0, uint256 reserveAmount1, ) = pairInfo.getReserves();
+        (uint256 reserveAmount0, uint256 reserveAmount1, ) = pairInfo
+            .getReserves();
         uint256 sqrtR = MathUtils.sqrt(
             SafeMath.mul(reserveAmount0, reserveAmount1)
         );

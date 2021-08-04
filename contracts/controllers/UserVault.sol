@@ -15,6 +15,8 @@ contract UserVault {
         uint256 collateralValueAmount;
         uint256 debtBorrowedAmount;
         uint256 debtCollateralRatio;
+        // default is 0, meaning the user has no debt
+        uint256 lastDebtUpdate;
         bool softDeleted;
     }
 
@@ -66,6 +68,8 @@ contract UserVault {
         ];
 
         if (newVaultOwnerInfo.ID != 0) {
+            // TODO: Technically a user should be able to transfer a vault to the other user
+            // However, there are numerous checks and expressions to consider, will do it later
             revert("transferUserVault: NEW OWNER ALREADY HAS A VAULT");
         }
 

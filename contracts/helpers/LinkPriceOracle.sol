@@ -35,6 +35,7 @@ contract PriceOracle is Ownable {
         return tokenPriceInfo.price;
     }
 
+    // @notice Get price from the ChainLink oracle
     function getCurrentTokenPrice(address _token) external returns (uint256) {
         AggregatorV3Interface tokenPriceInfo = tokenAggregator[_token];
         (
@@ -50,7 +51,9 @@ contract PriceOracle is Ownable {
         // Do all Chainlink feeds return prices with 8 decimals of precision?
         // https://ethereum.stackexchange.com/q/92508
         // @borrow https://github.com/CreamFi/compound-protocol/blob/master/contracts/PriceOracleProxy.sol#L331
-        uint decimalPlaces = uint(18).sub(uint(tokenPriceInfo.decimals()));
+        uint256 decimalPlaces = uint256(18).sub(
+            uint256(tokenPriceInfo.decimals())
+        );
         priceToUint = priceToUint.mul(10**decimalPlaces);
 
         tokenPriceFeed[_token] = PriceInfo(
