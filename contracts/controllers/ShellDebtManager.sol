@@ -178,7 +178,7 @@ contract ShellDebtManager is
         address newVaultOwnerAddress,
         address collateralAddress
     ) external onlyVaultOwner returns (bool) {
-        UserVaultInfo storage userVault = userVaults[msg.sender];
+        UserVaultInfo storage previousVaultOwner = userVaults[msg.sender];
         UserVaultInfo storage newVaultOwnerVault = userVaults[
             newVaultOwnerAddress
         ];
@@ -189,27 +189,15 @@ contract ShellDebtManager is
         }
 
         UserVaultInfo storage newVaultOwner = userVaults[newVaultOwnerAddress];
-        newVaultOwner.collateralAmount = userVault.collateralAmount;
-        newVaultOwner.collateralValueAmount = userVault.collateralValueAmount;
-        newVaultOwner.debtBorrowedAmount = userVault.debtBorrowedAmount;
-        newVaultOwner.debtCollateralRatio = userVault.debtCollateralRatio;
-        newVaultOwner.lastDebtUpdate = userVault.lastDebtUpdate;
-        newVaultOwner.softDeleted = userVault.softDeleted;
+        // Save the IDs into the memory, so that they are set back to what they were
+        uint256 memory newVaultOwnerID = newVaultOwner.ID;
+        uint256 memory previousVaultOwnerID = previousVaultOwner.ID;
 
-        // Clear up the information of the previous owner's vault
-        // reset all properties to defaults;
-        for (
-            int256 index = 0;
-            index < vaultCollateralAddresses.length;
-            index++
-        ) {
-            UserVault.collateralAmount[vaultCollateralAddresses[index]] = 0;
-        }
-        userVault.collateralValueAmount = 0;
-        userVault.debtBorrowedAmount = 0;
-        userVault.debtCollateralRatio = 0;
-        userVault.lastDebtUpdate = 0;
-        userVault.softDeleted = false;
+        // Swap the properties of the vaults, to reset the previous one
+        // and pass the all the previous vault information into the new one
+        (newVaultOwner, previousVaultOwner) = (previousVaultOwner, newVaultOwner);
+        newVaultOwner.ID = newVaultOwnerID;
+        userVault.ID = previousVaultOwnerID;
 
         emit UserTransferedVault(
             msg.sender,
