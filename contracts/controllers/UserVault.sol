@@ -59,28 +59,12 @@ contract UserVault is PriceOracle {
 
     function transferUserVault(address newVaultOwnerAddress)
         external
+        virtual
         onlyVaultOwner
         returns (uint256)
     {
-        UserVaultInfo storage userVault = userVaults[msg.sender];
-        UserVaultInfo storage newVaultOwnerInfo = userVaults[
-            newVaultOwnerAddress
-        ];
-
-        if (newVaultOwnerInfo.ID != 0) {
-            // TODO: Technically a user should be able to transfer a vault to the other user
-            // However, there are numerous checks and expressions to consider, will do it later
-            revert("transferUserVault: NEW OWNER ALREADY HAS A VAULT");
-        }
-
-        newVaultOwnerInfo = userVault;
-        delete userVaults[msg.sender];
-        emit UserVaultTransfered(
-            userVault.ID,
-            msg.sender,
-            newVaultOwnerAddress
-        );
-        return userVault.ID;
+        // Overridden (defined well) in ShellDebtManager.sol contract
+        // that inherits it from SummerTimeVault contract
     }
 
     function destroyUserVault()

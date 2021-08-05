@@ -95,8 +95,8 @@ contract ShellDebtManager is
             "Borrow: debt ceiling hit, can't not borrow."
         );
 
-        uint256 memory newUserTotalDebtBorrowed = userVault.debtBorrowedAmount.add(
-            amountBorrowed
+        uint256 memory newUserTotalDebtBorrowed = amountToBorrow.add(
+            userVault.debtBorrowedAmount
         );
         uint256 memory newDebtCollateralRatio = newUserTotalDebtBorrowed.div(
             userVault.collateralValueAmount
@@ -123,7 +123,10 @@ contract ShellDebtManager is
         emit UserBorrowedDebt(vaultID, msg.sender, amountBorrowed);
     }
 
-    function repayShellStablecoinDebt(uint256 amountRepayed) external onlyVaultOwner {
+    function repayShellStablecoinDebt(uint256 amountRepayed)
+        external
+        onlyVaultOwner
+    {
         UserVaultInfo storage userVault = userVaults[msg.sender];
         // Update user's collateral value to the current value
         this.updateUserCollateralValue(userVault);
@@ -132,10 +135,7 @@ contract ShellDebtManager is
         this.updateUserDebtState(userVault);
 
         // User must deposit an amount larger than 0
-        require(
-            amountRepayed > 0,
-            "Repay: Must borrow more an amount above 0"
-        );
+        require(amountRepayed > 0, "Repay: Must borrow more an amount above 0");
 
         // User must have the amount in the wallet too
         require(
@@ -174,37 +174,43 @@ contract ShellDebtManager is
         emit UserRepayedDebt(vaultID, msg.sender, amountRepayed);
     }
 
-    function transferUserDebtFromVault(
-        address newVaultOwnerAddress,
-        address collateralAddress
-    ) external onlyVaultOwner returns (bool) {
-        UserVaultInfo storage previousVaultOwner = userVaults[msg.sender];
-        UserVaultInfo storage newVaultOwnerVault = userVaults[
-            newVaultOwnerAddress
-        ];
+    function transferUserVault(address newVaultOwnerAddress)
+        external
+        override(UserVault)
+        onlyVaultOwner
+        returns (uint256)
+    {
+        UserVaultInfo storage previousUserVault = userVaults[msg.sender];
+        // Update user's collateral value to the current value
+        this.updateUserCollateralValue(userVault);
+        // IF the user has any DEBT,
+        // calculate accrued interest amount, and add it to existing debt
+        this.updateUserDebtState(userVault);
 
+        UserVaultInfo storage nextUserVault = userVaults[newVaultOwnerAddress];
         // If the new user doesn't have a vault, create one on the go for them
-        if (newVaultOwnerVault.ID == 0) {
+        if (nextUserVault.ID == 0) {
             this.createUserVault(newVaultOwnerAddress);
+            nextUserVault = userVaults[newVaultOwnerAddress];
         }
 
-        UserVaultInfo storage newVaultOwner = userVaults[newVaultOwnerAddress];
         // Save the IDs into the memory, so that they are set back to what they were
-        uint256 memory newVaultOwnerID = newVaultOwner.ID;
-        uint256 memory previousVaultOwnerID = previousVaultOwner.ID;
+        uint256 memory nextVaultOwnerID = nextUserVault.ID;
+        uint256 memory previousVaultOwnerID = previousUserVault.ID;
 
         // Swap the properties of the vaults, to reset the previous one
-        // and pass the all the previous vault information into the new one
-        (newVaultOwner, previousVaultOwner) = (previousVaultOwner, newVaultOwner);
-        newVaultOwner.ID = newVaultOwnerID;
+        // and pass all the previous vault information into the next one
+        (nextUserVault, previousUserVault) = (previousUserVault, nextUserVault);
+        nextUserVault.ID = nextVaultOwnerID;
         userVault.ID = previousVaultOwnerID;
 
-        emit UserTransferedVault(
+        emit UserTransferredVault(
             msg.sender,
             newVaultOwnerAddress,
             amount,
             debtAmount
         );
+        return nextVaultOwnerID;
     }
 
     function updateUserCollateralValue(UserVaultInfo storage userVault)
@@ -284,7 +290,7 @@ contract ShellDebtManager is
     );
     event UserBorrowedDebt(uint256 vaultID, address vaultOwner, uint256 amount);
     event UserRepayedDebt(uint256 vaultID, address vaultOwner, uint256 amount);
-    event UserTransferedVault(
+    event UserTransferredVault(
         address previousOwnerAddress,
         address newDebtOwnerAddress,
         address collateralAddress,
