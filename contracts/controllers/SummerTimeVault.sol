@@ -100,8 +100,9 @@ contract SummmerTimeVault is Ownable, VaultCollateralConfig, UserVault {
             token1Address
         );
         IUniswapV2Pair tokenPairsForLP = IUniswapV2Pair(addressForLPPair);
-        if (addressForLPPair == address(0))
+        if (addressForLPPair == address(0)) {
             revert("LP Pair address doesn't EXIST");
+        }
 
         address token0 = tokenPairsForLP.token0();
         address token1 = tokenPairsForLP.token1();

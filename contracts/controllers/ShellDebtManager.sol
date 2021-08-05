@@ -157,6 +157,7 @@ contract ShellDebtManager is
                 userVault.debtBorrowedAmount
             );
             amountBalance = amountRepayed.sub(userVault.debtBorrowedAmount);
+            // Send back the SHELL balance that was left after paying the DEBT
             _transfer(address(this), msg.sender, amountBalance);
         }
 
@@ -187,11 +188,28 @@ contract ShellDebtManager is
             this.createUserVault(newVaultOwnerAddress);
         }
 
-        // TODO:
-        // get user's debt/collateral ratio,
-        // then migrate the debt to the new vault along with enough collateral
-        // according to the user's debt/collateral ratio
-        // ISSUE: If user's has several collateral deposited???
+        UserVaultInfo storage newVaultOwner = userVaults[newVaultOwnerAddress];
+        newVaultOwner.collateralAmount = userVault.collateralAmount;
+        newVaultOwner.collateralValueAmount = userVault.collateralValueAmount;
+        newVaultOwner.debtBorrowedAmount = userVault.debtBorrowedAmount;
+        newVaultOwner.debtCollateralRatio = userVault.debtCollateralRatio;
+        newVaultOwner.lastDebtUpdate = userVault.lastDebtUpdate;
+        newVaultOwner.softDeleted = userVault.softDeleted;
+
+        // Clear up the information of the previous owner's vault
+        // reset all properties to defaults;
+        for (
+            int256 index = 0;
+            index < vaultCollateralAddresses.length;
+            index++
+        ) {
+            UserVault.collateralAmount[vaultCollateralAddresses[index]] = 0;
+        }
+        userVault.collateralValueAmount = 0;
+        userVault.debtBorrowedAmount = 0;
+        userVault.debtCollateralRatio = 0;
+        userVault.lastDebtUpdate = 0;
+        userVault.softDeleted = false;
 
         emit UserTransferedVault(
             msg.sender,
