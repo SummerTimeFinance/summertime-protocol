@@ -143,23 +143,32 @@ contract ShellDebtManager is
             "Repay: your balance is lesser than amount for repayment"
         );
 
-        // Check to see if the repayed amount is larger or equal than the actual debt
-        // In this scenario, only deduct the DEBT owed, and send back the rest to the user
         uint256 memory newUserTotalDebtBorrowed;
         uint256 memory newDebtCollateralRatio;
+        uint256 memory amountBalance;
 
+        newUserTotalDebtBorrowed = userVault.debtBorrowedAmount.sub(
+            amountRepayed
+        );
+        // Check to see if the repayed amount is larger or equal than the actual debt
+        // In this scenario, only deduct the DEBT owed, and send back the rest to the user
         if (amountRepayed >= userVault.debtBorrowedAmount) {
             newUserTotalDebtBorrowed = userVault.debtBorrowedAmount.sub(
                 userVault.debtBorrowedAmount
             );
-            newDebtCollateralRatio = newUserTotalDebtBorrowed.div(
-                userVault.collateralValueAmount
-            );
+            amountBalance = amountRepayed.sub(userVault.debtBorrowedAmount);
+            _transfer(address(this), msg.sender, amountBalance);
         }
+
+        // Get the new debt/collateral ratio
+        newDebtCollateralRatio = newUserTotalDebtBorrowed.div(
+            userVault.collateralValueAmount
+        );
 
         userVault.debtCollateralRatio = newDebtCollateralRatio;
         userVault.debtBorrowedAmount = newUserTotalDebtBorrowed;
 
+        // Destroy the SHELL paid back
         _burn(msg.sender, amountRepayed);
         emit UserRepayedDebt(vaultID, msg.sender, amountRepayed);
     }
