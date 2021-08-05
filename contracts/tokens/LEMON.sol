@@ -2,12 +2,12 @@
 pragma solidity ^0.6.6;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20Detailed.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Capped.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
+// import "@openzeppelin/contracts/token/ERC20/ERC20Detailed.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20Capped.sol";
+import "@openzeppelin/contracts/drafts/ERC20Permit.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract SummerTimeLemonToken is ERC20, ERC20Permit, ERC20Capped, Ownable {
+contract SummerTimeToken is ERC20, ERC20Capped, ERC20Permit, Ownable {
     enum Allocations {
         MAXIMUM_SUPPLY,
         FARMING_REWARDS,
@@ -25,8 +25,9 @@ contract SummerTimeLemonToken is ERC20, ERC20Permit, ERC20Capped, Ownable {
     mapping(Allocations => uint256) public Tokenomics;
 
     constructor()
-        ERC20Detailed("SummerTime Lemons", "LEMON", 18)
-        ERC20Permit("SummerTime Lemons")
+        public
+        ERC20("SummerTime Token", "SUMMER")
+        ERC20Permit("SummerTime Token")
         // Maximum token cap is 500M
         ERC20Capped(500 * oneMillion * 10**decimals())
     {
@@ -50,10 +51,7 @@ contract SummerTimeLemonToken is ERC20, ERC20Permit, ERC20Capped, Ownable {
         return Tokenomics[Allocations.MAXIMUM_SUPPLY] * 10**decimals();
     }
 
-    function _mint(address account, uint256 amount)
-        internal
-        override(ERC20, ERC20Capped)
-    {
+    function _mint(address account, uint256 amount) internal override(ERC20) {
         require(
             ERC20.totalSupply() + amount <= cap(),
             "LEMON ERC20Capped: Max cap exceeded"
@@ -61,13 +59,16 @@ contract SummerTimeLemonToken is ERC20, ERC20Permit, ERC20Capped, Ownable {
         super._mint(account, amount);
     }
 
-    function transfer(address recipient, uint256 amount)
-        public
-        override
-        returns (bool)
-    {
-        require(recipient != address(this));
-        return super.transfer(recipient, amount);
+    function _beforeTokenTransfer(
+        address from,
+        address recipient,
+        uint256 amount
+    ) internal virtual override(ERC20, ERC20Capped) {
+        super._beforeTokenTransfer(from, recipient, amount);
+        require(
+            recipient != address(this),
+            "beforeTransfer: invalid recipient"
+        );
     }
 
     // function updateTokenomics(Allocations alloc, uint256 amount) public onlyOwner return (Boolean) {
