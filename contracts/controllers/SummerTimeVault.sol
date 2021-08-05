@@ -57,6 +57,18 @@ contract SummmerTimeVault is Ownable, VaultCollateralConfig, UserVault {
         uniswapFactoryAddress = uniswapFactoryAddress_;
     }
 
+    function fetchCollateralPrice(address collateralAddress)
+        external
+        returns (uint256 fairLPPrice)
+    {
+        // Update the current price of the LP collateral (price oracle check)
+        uint256 fairLPPrice = PriceOracle.getLastLPTokenPrice(
+            collateralAddress
+        );
+        VaultConfig storage vault = vault[collateralAddress];
+        vault.fairPrice = fairLPPrice;
+    }
+
     function createNewCollateralVault(
         string collateralDisplayName,
         address token0Address,
@@ -134,7 +146,9 @@ contract SummmerTimeVault is Ownable, VaultCollateralConfig, UserVault {
         address newStakingAddress
     ) external onlyOwner collateralAccepted(collateralAddress) returns (bool) {
         VaultConfig storage vault = vaultAvailable[collateralAddress];
-        // TODO: unstake those tokens and migrate them to the new stakingAddress
+        // TODO:
+        // unstake those tokens, compound the harvested rewards
+        // then restake/migrate them to the new stakingAddress
         vault.stakingAddress = newStakingAddress;
         emit VaultStakingAddressUpdated(newStakingAddress);
         return true;
