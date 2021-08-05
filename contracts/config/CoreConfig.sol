@@ -41,8 +41,13 @@ contract SummerTimeCoreConfig is DefaultConfig {
     bool public protocolDepositingPaused;
     bool public protocolBorrowingPaused;
 
-    function perSecondInterestRate(uint256 givenInterestRate) internal pure returns (uint256) {
-        uint256 everySecondInterestRate = (givenInterestRate * decimal18Places) / secondsInYear;
+    function perSecondInterestRate(uint256 givenInterestRate)
+        internal
+        pure
+        returns (uint256)
+    {
+        uint256 everySecondInterestRate = (givenInterestRate *
+            decimal18Places) / secondsInYear;
         return everySecondInterestRate;
     }
 }

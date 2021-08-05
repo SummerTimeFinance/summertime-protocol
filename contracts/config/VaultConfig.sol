@@ -33,14 +33,14 @@ contract VaultCollateralConfig is Ownable {
         address priceOracle2Address;
         // This collateral vault custom interest rate, if still 0, it uses the global one
         uint256 interestRate;
-        // This collateral vault specific debt ceiling, the default 0 means its unlimited
+        // This collateral vault specific debt ceiling, if 0, its unlimited
         uint256 debtCeiling;
         // Default will be 50%, meaning user can borrow only up to 50% of their collateral value
         // Set to 51 to allow user to actually borrow up to 50% of it
         uint256 minimumDebtCollateralRatio;
         // The current ratio, got from: debt / deposits
         uint256 currentDebtCollateralRatio;
-        // Initially value will be $1000, if set to 0, it means it's unlimited
+        // Initially value will be $1000, if 0, it's unlimited
         uint256 maxCollateralAmountAccepted;
         // Both initialized with 0;
         uint256 currentTotalDepositedAmount;

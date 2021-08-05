@@ -3,7 +3,7 @@ pragma solidity ^0.6.6;
 
 import "./SummerTimeVault.sol";
 
-contract UserVault {
+contract UserVault is PriceOracle {
     // VAULT ID count will start at 100,000
     uint256 private vaultIDCount = 100000;
 
@@ -35,9 +35,9 @@ contract UserVault {
     function createUserVault(
         address userAddress /*, address collateralType */
     ) external returns (uint256 createdVaultId) {
-        address memory userVaultAddress = userAddress || msg.sender;
+        address memory vaultOwnerAddress = userAddress || msg.sender;
         // Check if the user has already created a vault with us
-        UserVaultInfo storage userVault = userVaults[userVaultAddress];
+        UserVaultInfo storage userVault = userVaults[vaultOwnerAddress];
         require(
             userVault.ID == 0 && userVault.softDeleted == false,
             "createUserVault: VAULT EXISTS"
@@ -47,12 +47,12 @@ contract UserVault {
             uint256 memory createdVaultId = vaultIDCount++; // createdVaultId is return variable
             userVault.ID = createdVaultId;
             // userVault.tokenCollateralAmount[collateralType] = 0;
-            vaultCurrentUsers.push(userVaultAddress);
-            emit UserVaultCreated(createdVaultId, userVaultAddress, false);
+            vaultCurrentUsers.push(vaultOwnerAddress);
+            emit UserVaultCreated(createdVaultId, vaultOwnerAddress, false);
         } else {
             // If the vault exits, just "undelete" it
             userVault.softDeleted = false;
-            emit UserVaultCreated(createdVaultId, userVaultAddress, true);
+            emit UserVaultCreated(createdVaultId, vaultOwnerAddress, true);
         }
         return createdVaultId;
     }
@@ -91,7 +91,7 @@ contract UserVault {
         UserVaultInfo storage userVault = userVaults[msg.sender];
         // Ensure user's $SHELL DEBT is 0 (fully paid back)
         require(
-            userVault.debtBorrowedAmount == 0,
+            userVault.debtBorrowedAmount == 0 && userVault.lastDebtUpdate == 0,
             "destroyUserVault: VAULT STILL HAS DEBT"
         );
         userVaults[msg.sender].softDeleted = true;
