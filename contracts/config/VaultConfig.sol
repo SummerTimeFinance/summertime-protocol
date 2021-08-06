@@ -27,10 +27,10 @@ contract VaultCollateralConfig is Ownable {
         address strategyAddress;
         // the current fair LP price
         uint256 fairPrice;
-        // The price oracle to get the PRICE of the LP tokens using the fair price
-        address priceOracleAddress;
-        // Backup price oracle if the main one fails, may use for Uniswapv2 TWAP oracles
-        address priceOracle2Address;
+        // The price oracle to get the PRICE of the token0
+        address token0PriceOracle;
+        // The price oracle to get the PRICE of the token1
+        address token1PriceOracle;
         // This collateral vault custom interest rate, if still 0, it uses the global one
         uint256 interestRate;
         // This collateral vault specific debt ceiling, if 0, its unlimited

@@ -73,11 +73,12 @@ contract SummmerTimeVault is Ownable, VaultCollateralConfig, UserVault {
         string collateralDisplayName,
         address token0Address,
         address token1Address,
-        uint256 minimumDebtCollateralRatio,
         // address collateralAddress,
+        uint256 minimumDebtCollateralRatio,
         // address stakingAddress,
         // address strategyAddress,
-        address priceOracleAddress
+        address token0PriceOracle,
+        address token1PriceOracle
     ) external onlyOwner returns (VaultConfig) {
         if (bytes(collateralDisplayName).length > 0) {
             revert(
@@ -90,8 +91,11 @@ contract SummmerTimeVault is Ownable, VaultCollateralConfig, UserVault {
         if (address(token1Address) != address(0)) {
             revert("createNewCollateralVault: token1Address not provided");
         }
-        if (address(priceOracleAddress) != address(0)) {
-            revert("createNewCollateralVault: priceOracleAddress not provided");
+        if (address(token0PriceOracle) != address(0)) {
+            revert("createNewCollateralVault: token0PriceOracle not provided");
+        }
+        if (address(token1PriceOracle) != address(0)) {
+            revert("createNewCollateralVault: token1PriceOracle not provided");
         }
 
         address addressForLPPair = UniswapV2Library.pairFor(
@@ -101,7 +105,7 @@ contract SummmerTimeVault is Ownable, VaultCollateralConfig, UserVault {
         );
         IUniswapV2Pair tokenPairsForLP = IUniswapV2Pair(addressForLPPair);
         if (addressForLPPair == address(0)) {
-            revert("LP Pair address doesn't EXIST");
+            revert("createNewCollateralVault: LP pair doesn't EXIST");
         }
 
         address token0 = tokenPairsForLP.token0();
@@ -113,21 +117,22 @@ contract SummmerTimeVault is Ownable, VaultCollateralConfig, UserVault {
             revert("createNewCollateralVault: VAULT EXISTS");
         }
 
-        // Add vault collateral address to accepted collateral types
-        vaultCollateralAddresses.push(addressForLPPair);
-
         // token0, token1 can all be derived from the UniswapV2 interface
         vault = VaultConfig({
             collateralDisplayName: collateralDisplayName,
             collateralTokenAddress: addressForLPPair,
             token0: token0Address,
             token1: token1Address,
-            priceOracleAddress: priceOracleAddress,
+            token0PriceOracle: token0PriceOracle,
+            token1PriceOracle: token1PriceOracle,
             minimumDebtCollateralRatio: minimumDebtCollateralRatio ||
                 50 *
                 10**17, // default: 1.5
             maxCollateralAmountAccepted: 1000 * 10**18
         });
+
+        // Add vault collateral address to accepted collateral types
+        vaultCollateralAddresses.push(addressForLPPair);
 
         return vault;
     }
