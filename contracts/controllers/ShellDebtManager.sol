@@ -245,7 +245,10 @@ contract ShellDebtManager is
         return userVault.collateralValueAmount;
     }
 
-    function updateUserDebtState(UserVaultInfo storage UserVault) internal {
+    function updateUserDebtState(UserVaultInfo storage UserVault)
+        internal
+        returns (uint256)
+    {
         if (userVault.debtBorrowedAmount > 0) {
             // the time past since last debt accrued update (in seconds)
             uint256 currentTimestamp = block.timestamp;
@@ -281,6 +284,8 @@ contract ShellDebtManager is
             // Don't forget to update the lastDebtUpdate timestamp
             userVault.lastDebtUpdate = currentTimestamp;
         }
+
+        return userVault.debtBorrowedAmount;
     }
 
     event UserDepositedCollateral(
