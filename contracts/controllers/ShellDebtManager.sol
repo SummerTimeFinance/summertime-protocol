@@ -21,11 +21,11 @@ contract ShellDebtManager is
 
     // @dev constructor will initialize SHELL with a cap (debt ceiling) of $100,000
     // @param uint: summerTimeTotalDebtCeiling (global config variable)
-    // @param address: uniswapFactoryAddress_ this is PancakeSwap's LP Factory address
-    constructor(address uniswapFactoryAddress_)
+    // @param address: _uniswapFactoryAddress this is PancakeSwap's LP Factory address
+    constructor(address _uniswapFactoryAddress)
         internal
         ShellStableCoin(summerTimeTotalDebtCeiling)
-        SummerTimeVault(uniswapFactoryAddress_)
+        SummerTimeVault(_uniswapFactoryAddress)
     {
         // Do some magic!
     }
@@ -35,6 +35,7 @@ contract ShellDebtManager is
         payable
         collateralAccepted(collateralAddress)
         onlyVaultOwner
+        nonReentrant
     {
         UserVaultInfo storage userVault = userVaults[msg.sender];
         // Update the vault's fair LP price
@@ -57,7 +58,7 @@ contract ShellDebtManager is
         // Update the user's current collateral amount & value
         userVault.collateral[collateralAddress] = newCollateralAmount;
         // Update user's collateral total value to the current value
-        this.updateUserCollateralValue(userVault);
+        // this.updateUserCollateralValue(userVault);
 
         // IF the user has any DEBT,
         // calculate accrued interest amount, and add it to existing debt
@@ -71,10 +72,12 @@ contract ShellDebtManager is
     function borrowShellStableCoin(uint256 amountBorrowed)
         external
         onlyVaultOwner
+        nonReentrant
     {
         UserVaultInfo storage userVault = userVaults[msg.sender];
         // Update user's collateral total value to the current value
-        this.updateUserCollateralValue(userVault);
+        // this.updateUserCollateralValue(userVault);
+
         // IF the user has any DEBT,
         // calculate accrued interest amount, and add it to existing debt
         this.updateUserDebtState(userVault);
@@ -89,7 +92,7 @@ contract ShellDebtManager is
         require(!protocolBorrowingPaused, "Borrowing is paused.");
 
         // Has the global DEBT ceiling been hit
-        uint256 SHELLTotalSupply = ShellStableCoin.totalSupply();
+        uint256 memory SHELLTotalSupply = ShellStableCoin.totalSupply();
         require(
             !(SHELLTotalSupply.add(amountBorrowed) <= ShellStableCoin.cap()),
             "Borrow: debt ceiling hit, can't not borrow."
@@ -126,10 +129,12 @@ contract ShellDebtManager is
     function repayShellStablecoinDebt(uint256 amountRepayed)
         external
         onlyVaultOwner
+        nonReentrant
     {
         UserVaultInfo storage userVault = userVaults[msg.sender];
         // Update user's collateral value to the current value
-        this.updateUserCollateralValue(userVault);
+        // this.updateUserCollateralValue(userVault);
+
         // IF the user has any DEBT,
         // calculate accrued interest amount, and add it to existing debt
         this.updateUserDebtState(userVault);
@@ -178,11 +183,13 @@ contract ShellDebtManager is
         external
         override(UserVault)
         onlyVaultOwner
+        nonReentrant
         returns (uint256)
     {
         UserVaultInfo storage previousUserVault = userVaults[msg.sender];
         // Update user's collateral value to the current value
-        this.updateUserCollateralValue(userVault);
+        // this.updateUserCollateralValue(userVault);
+
         // IF the user has any DEBT,
         // calculate accrued interest amount, and add it to existing debt
         this.updateUserDebtState(userVault);
@@ -249,6 +256,9 @@ contract ShellDebtManager is
         internal
         returns (uint256)
     {
+        // 1st upda the user's collateral value
+        this.updateUserCollateralValue(userVault);
+
         if (userVault.debtBorrowedAmount > 0) {
             // the time past since last debt accrued update (in seconds)
             uint256 currentTimestamp = block.timestamp;
