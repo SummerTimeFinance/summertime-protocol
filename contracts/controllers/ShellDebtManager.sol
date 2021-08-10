@@ -42,10 +42,16 @@ contract ShellDebtManager is
         uint256 fairLPPrice = this.fetchCollateralPrice(collateralAddress);
 
         // Is depositing disabled globally
-        require(!protocolDepositingPaused, "Deposits are paused.");
+        require(
+            !protocolDepositingPaused,
+            "depositCollateral: deposits are paused."
+        );
 
         // User must deposit an amount larger than 0
-        require(msg.value > 0, "Must deposit an amount larger than 0");
+        require(
+            msg.value > 0,
+            "depositCollateral: Must deposit an amount larger than 0"
+        );
 
         uint256 memory currentCollateralAmount = userVault.collateral[
             collateralAddress
@@ -57,12 +63,9 @@ contract ShellDebtManager is
         );
         // Update the user's current collateral amount & value
         userVault.collateral[collateralAddress] = newCollateralAmount;
-        // Update user's collateral total value to the current value
-        // this.updateUserCollateralValue(userVault);
-
-        // IF the user has any DEBT,
-        // calculate accrued interest amount, and add it to existing debt
-        this.updateUserDebtState(userVault);
+        // Update user's collateral total value to the current value according to current market prices
+        // IF the user has any DEBT, calculate & add to the DEBT the new accrued interest amount
+        this.updateUserCollateralAndDebtState(userVault);
 
         // TODO:
         // - Collect rewards, and compound this vault (yeild-optimization part not written yet)
@@ -75,12 +78,9 @@ contract ShellDebtManager is
         nonReentrant
     {
         UserVaultInfo storage userVault = userVaults[msg.sender];
-        // Update user's collateral total value to the current value
-        // this.updateUserCollateralValue(userVault);
-
-        // IF the user has any DEBT,
-        // calculate accrued interest amount, and add it to existing debt
-        this.updateUserDebtState(userVault);
+        // Update user's collateral total value to the current value according to current market prices
+        // IF the user has any DEBT, calculate & add to the DEBT the new accrued interest amount
+        this.updateUserCollateralAndDebtState(userVault);
 
         // User must deposit an amount larger than 0
         require(
@@ -132,12 +132,9 @@ contract ShellDebtManager is
         nonReentrant
     {
         UserVaultInfo storage userVault = userVaults[msg.sender];
-        // Update user's collateral value to the current value
-        // this.updateUserCollateralValue(userVault);
-
-        // IF the user has any DEBT,
-        // calculate accrued interest amount, and add it to existing debt
-        this.updateUserDebtState(userVault);
+        // Update user's collateral value to the current value according to current market prices
+        // IF the user has any DEBT, calculate & add to the DEBT the new accrued interest amount
+        this.updateUserCollateralAndDebtState(userVault);
 
         // User must deposit an amount larger than 0
         require(amountRepayed > 0, "Repay: Must borrow more an amount above 0");
@@ -187,12 +184,9 @@ contract ShellDebtManager is
         returns (uint256)
     {
         UserVaultInfo storage previousUserVault = userVaults[msg.sender];
-        // Update user's collateral value to the current value
-        // this.updateUserCollateralValue(userVault);
-
-        // IF the user has any DEBT,
-        // calculate accrued interest amount, and add it to existing debt
-        this.updateUserDebtState(userVault);
+        // Update user's collateral value to the current value according to current market prices
+        // IF the user has any DEBT, calculate & add to the DEBT the new accrued interest amount
+        this.updateUserCollateralAndDebtState(userVault);
 
         UserVaultInfo storage nextUserVault = userVaults[newVaultOwnerAddress];
         // If the new user doesn't have a vault, create one on the go for them
@@ -219,6 +213,8 @@ contract ShellDebtManager is
         );
         return nextVaultOwnerID;
     }
+
+    function buyRiskyUserVault(address userVaultAddress) onlyOwner {}
 
     function updateUserCollateralValue(UserVaultInfo storage userVault)
         internal
@@ -252,7 +248,7 @@ contract ShellDebtManager is
         return userVault.collateralValueAmount;
     }
 
-    function updateUserDebtState(UserVaultInfo storage UserVault)
+    function updateUserCollateralAndDebtState(UserVaultInfo storage UserVault)
         internal
         returns (uint256)
     {
