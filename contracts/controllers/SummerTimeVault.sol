@@ -75,7 +75,7 @@ contract SummmerTimeVault is Ownable, VaultCollateralConfig, UserVault {
         address token1Address,
         // address collateralAddress, // this is derived from token0 and token1
         uint256 minimumDebtCollateralRatio,
-        // address stakingAddress,
+        // address farmContractAddress,
         // address strategyAddress,
         address token0PriceOracle,
         address token1PriceOracle
@@ -149,16 +149,16 @@ contract SummmerTimeVault is Ownable, VaultCollateralConfig, UserVault {
         return true;
     }
 
-    function updateStakingAddress(
+    function updateFarmContractAddress(
         address collateralAddress,
-        address newStakingAddress
+        address farmContractAddress
     ) external onlyOwner collateralAccepted(collateralAddress) returns (bool) {
         VaultConfig storage vault = vaultAvailable[collateralAddress];
         // TODO:
         // unstake those tokens, compound the harvested rewards
-        // then restake/migrate them to the new stakingAddress
-        vault.stakingAddress = newStakingAddress;
-        emit VaultStakingAddressUpdated(newStakingAddress);
+        // then restake/migrate them to the new farmContractAddress
+        vault.farmContractAddress = farmContractAddress;
+        emit VaultFarmContractAddressUpdated(farmContractAddress);
         return true;
     }
 
@@ -169,7 +169,7 @@ contract SummmerTimeVault is Ownable, VaultCollateralConfig, UserVault {
         VaultConfig storage vault = vaultAvailable[collateralAddress];
         // TODO:
         // unstake those tokens, compound the harvested rewards
-        // then restake/migrate them to the new stakingAddress
+        // then restake/migrate them to the new farmContractAddress
         vault.strategyAddress = newStrategyAddress;
         return true;
     }
@@ -269,7 +269,7 @@ contract SummmerTimeVault is Ownable, VaultCollateralConfig, UserVault {
         address token1
     );
     event CollateralVaultState(address collateralAddress, bool isDisabled);
-    event VaultStakingAddressUpdated(address newStakingAddress);
+    event VaultFarmContractAddressUpdated(address farmContractAddress);
     event VaultPriceOracle1AddressUpdated(address newPriceOracleAddress);
     event VaultPriceOracle2AddressUpdated(address newPriceOracle2Address);
     event VaultDebtCeilingUpdated(uint256 newDebtCeiling);

@@ -22,7 +22,7 @@ contract VaultCollateralConfig is Ownable {
         // string token0Name;
         // string token1Name;
         // The Pancake or MasterChef address being used for staking the LP
-        address stakingAddress;
+        address farmContractAddress;
         // The strategy address for this vault used by SummerTime for compounding
         address strategyAddress;
         // the current fair LP price
@@ -40,7 +40,7 @@ contract VaultCollateralConfig is Ownable {
         uint256 minimumDebtCollateralRatio;
         // The current ratio, got from: debt / deposits
         uint256 currentDebtCollateralRatio;
-        // Initially value will be $1000, if 0, it's unlimited
+        // Initially value will be set to $1000, if 0, it's unlimited
         uint256 maxCollateralAmountAccepted;
         // Both initialized with 0;
         uint256 currentTotalDepositedAmount;
