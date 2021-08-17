@@ -5,49 +5,66 @@ import "../constants/Defaults.sol";
 
 contract SummerTimeCoreConfig is DefaultConfig {
     // Initial protocol-WIDE DEBT ceiling is: $100,000
-    uint256 public summerTimeDebtCeiling = 100000;
+    uint256 public summerTimeDebtCeiling = 100000e18;
+
+    // Used to set the mininum amount of debt a user can borrow
+    uint256 public minimumDebtAmount = 0;
 
     // The base can be used to calculate a new CCR for a new vault,
-    // or updating an existing one, equal to 100%
-    uint256 public constant baseDebtCollateralRatio = 100;
+    // or updating an existing one, equal to 1
+    uint256 public constant baseCollateralCoverageRatio = 1e18;
 
-    // Default CCR: 150%
-    uint256 public defaultDebtCollateralRatio = 150;
+    // The threshold at which a borrow position will be considered: 0.95
+    // undercollateralized and subject to liquidation for each collateral.
+    uint256 public liquidationThreshold = 95e17;
+
+    // Targeted CCR of a vault, once liquidation is triggered
+    uint256 public targetedCollateralCoverageRatio = 12e17;
+
+    // discount applied the user's collateralL: 50% (0.5)
+    uint256 public discountApplied = 5e17;
+
+    // Base interest rate: 0.5%
+    uint256 public baseInterestRate = 50e17;
 
     // Default platform interest rate: 5%
-    uint256 public defaultInterestRate = 5;
+    uint256 public platformInterestRate = 5e18;
 
-    // Vault liquidation incentive: 5%
-    uint256 public constant liquidationIncentive = 5;
+    // On liquidation, 4/9 of a vault's collateral is taken
+    uint256 public liquidationFraction = 44444e13;
+
+    // Vault liquidation incentive: 10%
+    uint256 public liquidationIncentive = 10e18;
+
+    // Liquidation fee of 0.5% is applied to all liquidations
+    uint256 public liquidationFee = 5e17;
 
     // The portion of accrued interest that goes into reserves, initial set to: 0.10%
-    uint256 reserveFactor = 10;
-    uint256 reserveAmount = 0;
+    uint256 public reserveFactor = 1e17;
 
-    // NOTE: Setting to 1000 since there's a very high probabilty we'll never
-    // get to 1000 assets available to borrow against, but who knows!!!
-    uint256 maxAssetsThatCanBeUsedForBorrowing = 1000;
+    // The amount of collateral that is in the reserves
+    uint256 public reserveAmount = 0;
 
-    // From the onset there will be no vault opening fee
-    uint256 public vaultOpeningFee = 0;
+    // Set to $25, same as the cost to opening a bank account
+    uint256 public vaultOpeningFee = 25e18;
 
-    // Initial set to: 0.5%
-    uint256 public vaultClosingFee = 50;
+    // Initial set to: 0
+    uint256 public vaultClosingFee = 0;
 
     // Debt borrowing onetime fee: 0.5%
-    uint256 public debtBorrowingFee = 0;
+    uint256 public debtBorrowingFee = 5e17;
 
     // For protocol-WIDE pausing depositing or borrowing, incase there is a need to do so
-    bool public protocolDepositingPaused;
-    bool public protocolBorrowingPaused;
+    bool public protocolDepositingPaused = false;
+    bool public protocolBorrowingPaused = false;
 
-    function perSecondInterestRate(uint256 givenInterestRate)
+    function perSecondInterestRate(uint256 interestRate)
         internal
         pure
         returns (uint256)
     {
-        uint256 everySecondInterestRate = (givenInterestRate *
-            decimal18Places) / secondsInYear;
+        uint256 everySecondInterestRate = (interestRate * decimal18Places) /
+            secondsInYear;
         return everySecondInterestRate;
     }
 }
