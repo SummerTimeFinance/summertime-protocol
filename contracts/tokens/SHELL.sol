@@ -8,12 +8,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20Burnable.sol";
 import "@openzeppelin/contracts/drafts/ERC20Permit.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract ShellStableCoin is
-    ERC20,
-    ERC20Burnable,
-    ERC20Permit,
-    Ownable
-{
+contract ShellStableCoin is ERC20, ERC20Burnable, ERC20Permit, Ownable {
     uint256 internal _cap = 0;
     uint256 internal immutable decimalsPlaces18;
 

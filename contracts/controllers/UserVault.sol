@@ -9,12 +9,14 @@ contract UserVault is PriceOracle {
 
     struct UserVaultInfo {
         uint256 ID;
-        // A user can deposit more that 1 collateral to borrow against
+        // The collateral amount of each collateral the user has deposited
         mapping(address => uint256) collateralAmount;
+        // The collateral value of each collateral the user has
+        mapping(address => uint256) collateralValue;
         // Calculated on each deposit, withdawal, borrowing and repayment
-        uint256 collateralValueAmount;
+        uint256 totalCollateralValue;
         uint256 debtBorrowedAmount;
-        uint256 debtCollateralRatio;
+        uint256 collateralCoverageRatio;
         // default is 0, meaning the user has no debt
         uint256 lastDebtUpdate;
         bool softDeleted;
@@ -23,8 +25,11 @@ contract UserVault is PriceOracle {
     mapping(address => UserVaultInfo) internal userVaults;
     address[] internal vaultCurrentUsers;
 
-    modifier onlyVaultOwner(uint256 vaultID) {
-        UserVaultInfo storage userVault = userVaults[msg.sender];
+    modifier onlyVaultOwner(address vaultOwner) {
+        UserVaultInfo memory userVault = userVaults[msg.sender];
+        if (vaultOwner != address(0)) {
+            userVault = userVaults[vaultOwner];
+        }
         require(
             userVault.ID != 0 || userVault.softDeleted != true,
             "onlyVaultOwner: VAULT DOES NOT EXISTS"
@@ -32,9 +37,10 @@ contract UserVault is PriceOracle {
         _;
     }
 
-    function createUserVault(
-        address userAddress /*, address collateralType */
-    ) external returns (uint256 createdVaultId) {
+    function createUserVault(address userAddress)
+        external
+        returns (uint256 createdVaultId)
+    {
         address memory vaultOwnerAddress = userAddress || msg.sender;
         // Check if the user has already created a vault with us
         UserVaultInfo storage userVault = userVaults[vaultOwnerAddress];
