@@ -9,22 +9,23 @@ import "@uniswap/v2-periphery/contracts/libraries/UniswapV2Library.sol";
 import "../controllers/UserVault.sol";
 import "../config/VaultConfig.sol";
 
+// The following collateral addresses will be supported (progressively):
+// BTCB-ETH (old is gold, proven) [127M]
+// BTCB-BUSD [118M]
+// ETH-BNB [139M]
+// BTCB-BNB [118M]
+// BUSD-BNB [460M]
+// USDT-BNB [230M]
+// CAKE-BNB (has largest liquidity) [600M]
+// Stablecoin LPs:
+// USDC-BUSD [122M]
+// USDT-BUSD [289M]
+// USDC-USDT [90M]
+// Total addressable market size: $2.2B (BSC, using PancakeSwap only)
+// current collaterals that are accepted
+
 contract SummmerTimeVault is Ownable, VaultCollateralConfig, UserVault {
-    address private immutable uniswapFactoryAddress;
-    // The following collateral addresses will be supported (progressively):
-    // BTCB-ETH (old is gold, proven) [127M]
-    // BTCB-BUSD [118M]
-    // ETH-BNB [139M]
-    // BTCB-BNB [118M]
-    // BUSD-BNB [460M]
-    // USDT-BNB [230M]
-    // CAKE-BNB (has largest liquidity) [600M]
-    // Stablecoin LPs:
-    // USDC-BUSD [122M]
-    // USDT-BUSD [289M]
-    // USDC-USDT [90M]
-    // Total addressable market size: $2.2B (BSC, using PancakeSwap only)
-    // current collaterals that are accepted
+    address internal immutable uniswapFactoryAddress;
     mapping(address => VaultConfig) internal vaultAvailable;
     address[] internal vaultCollateralAddresses;
 
@@ -70,19 +71,18 @@ contract SummmerTimeVault is Ownable, VaultCollateralConfig, UserVault {
     }
 
     function createNewCollateralVault(
-        string collateralDisplayName,
+        string displayName,
         address token0Address,
         address token1Address,
-        // address collateralAddress, // this is derived from token0 and token1
-        uint256 minimumDebtCollateralRatio,
-        // address farmContractAddress,
-        // address strategyAddress,
         address token0PriceOracle,
-        address token1PriceOracle
+        address token1PriceOracle,
+        // address collateralAddress, // this is derived from token0 and token1
+        // address farmContractAddress, // this is only used in the strategy contract
+        address strategyAddress
     ) external onlyOwner returns (VaultConfig) {
-        if (bytes(collateralDisplayName).length > 0) {
+        if (bytes(displayName).length > 0) {
             revert(
-                "createNewCollateralVault: collateralDisplayName not provided"
+                "createNewCollateralVault: displayName not provided"
             );
         }
         if (address(token0Address) != address(0)) {
@@ -97,6 +97,9 @@ contract SummmerTimeVault is Ownable, VaultCollateralConfig, UserVault {
         if (address(token1PriceOracle) != address(0)) {
             revert("createNewCollateralVault: token1PriceOracle not provided");
         }
+        if (address(strategyAddress) != address(0)) {
+            revert("createNewCollateralVault: strategyAddress not provided");
+        }
 
         address addressForLPPair = UniswapV2Library.pairFor(
             uniswapFactoryAddress,
@@ -105,7 +108,7 @@ contract SummmerTimeVault is Ownable, VaultCollateralConfig, UserVault {
         );
         IUniswapV2Pair tokenPairsForLP = IUniswapV2Pair(addressForLPPair);
         if (addressForLPPair == address(0)) {
-            revert("createNewCollateralVault: LP pair doesn't EXIST");
+            revert("createNewCollateralVault: LP pair doesn't EXIST yet");
         }
 
         // token0, token1 can all be derived from the UniswapV2 interface
@@ -113,39 +116,36 @@ contract SummmerTimeVault is Ownable, VaultCollateralConfig, UserVault {
         address token1 = tokenPairsForLP.token1();
 
         VaultConfig storage vault = vaultAvailable[addressForLPPair];
-        // Check if the vault exists already
-        if (vault.collateralAddress != address(0)) {
+        // Check if the vault already exists
+        if (vault.collateralTokenAddress != address(0)) {
             revert("createNewCollateralVault: VAULT EXISTS");
         }
 
         vault = VaultConfig({
-            collateralDisplayName: collateralDisplayName,
+            displayName: displayName,
             collateralTokenAddress: addressForLPPair,
             token0: token0Address,
             token1: token1Address,
             token0PriceOracle: token0PriceOracle,
             token1PriceOracle: token1PriceOracle,
-            minimumDebtCollateralRatio: minimumDebtCollateralRatio ||
-                50 *
-                10**17, // default: 1.5
-            maxCollateralAmountAccepted: 1000 * 10**18
+            strategyAddress: strategyAddress,
+            maxCollateralAmountAccepted: uint256(1000).mul(10**18)
         });
 
         // Add vault collateral address to accepted collateral types
         vaultCollateralAddresses.push(addressForLPPair);
-
         return vault;
     }
 
     function updateCollateralName(
         address collateralAddress,
-        string newCollateralDisplayName
+        string newDisplayName
     ) external onlyOwner collateralAccepted(collateralAddress) returns (bool) {
-        if (bytes(newCollateralDisplayName).length == 0) {
+        if (bytes(newDisplayName).length == 0) {
             revert("CollateralName: invalid collateral name");
         }
         VaultConfig storage vault = vaultAvailable[collateralAddress];
-        vault.collateralDisplayName = newCollateralDisplayName;
+        vault.displayName = newDisplayName;
         return true;
     }
 
@@ -169,7 +169,7 @@ contract SummmerTimeVault is Ownable, VaultCollateralConfig, UserVault {
         VaultConfig storage vault = vaultAvailable[collateralAddress];
         // TODO:
         // unstake those tokens, compound the harvested rewards
-        // then restake/migrate them to the new farmContractAddress
+        // then restake/migrate them to the new newStrategyAddress
         vault.strategyAddress = newStrategyAddress;
         return true;
     }
@@ -204,13 +204,13 @@ contract SummmerTimeVault is Ownable, VaultCollateralConfig, UserVault {
         return true;
     }
 
-    function updateDebtCollateralRatio(
+    function updateCollateralCoverageRatio(
         address collateralAddress,
-        uint256 newDebtCollateralRatio
+        uint256 newCollateralCoverageRatio
     ) external onlyOwner collateralAccepted(collateralAddress) returns (bool) {
         VaultConfig storage vault = vaultAvailable[collateralAddress];
-        vault.minimumDebtCollateralRatio = newDebtCollateralRatio;
-        emit VaultDebtCollateralRatioUpdated(newDebtCollateralRatio);
+        vault.minimumDebtCollateralRatio = newCollateralCoverageRatio;
+        emit VaultCollateralCoverageRatioUpdated(newCollateralCoverageRatio);
         return true;
     }
 
@@ -273,7 +273,9 @@ contract SummmerTimeVault is Ownable, VaultCollateralConfig, UserVault {
     event VaultPriceOracle1AddressUpdated(address newPriceOracleAddress);
     event VaultPriceOracle2AddressUpdated(address newPriceOracle2Address);
     event VaultDebtCeilingUpdated(uint256 newDebtCeiling);
-    event VaultDebtCollateralRatioUpdated(uint256 newDebtCollateralRatio);
+    event VaultCollateralCoverageRatioUpdated(
+        uint256 newCollateralCoverageRatio
+    );
     event VaultMaxCollateralAmountUpdated(uint256 newMaxCollateralAmount);
     event VaultDepositingState(bool isDisabled);
     event VaultBorrowingState(bool isDisabled);

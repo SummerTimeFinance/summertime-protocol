@@ -6,13 +6,11 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract VaultCollateralConfig is Ownable {
     struct VaultConfig {
         // eg. CAKE/BNB
-        string collateralDisplayName;
+        string displayName;
         // The LP Collateral token address accepted by the platform
         address collateralTokenAddress;
-        // The address where all the collateral is deposited at
-        address collateralAddress;
         // Is the vault a single asset collateral vault; only SET once
-        // eg. we can accept USDC only vaults, to help stabalize the SHELL stablecoin
+        // eg. we can accept USDC only vaults, to help stablize the SHELL stablecoin
         bool isSingleAssetCollateralVault;
         // The token addresses of the tokens paired together in the AMM
         address token0;
@@ -35,16 +33,11 @@ contract VaultCollateralConfig is Ownable {
         uint256 interestRate;
         // This collateral vault specific debt ceiling, if 0, its unlimited
         uint256 debtCeiling;
-        // Default will be 50%, meaning user can borrow only up to 50% of their collateral value
-        // Set to 51 to allow user to actually borrow up to 50% of it
-        uint256 minimumDebtCollateralRatio;
-        // The current ratio, got from: debt / deposits
-        uint256 currentDebtCollateralRatio;
         // Initially value will be set to $1000, if 0, it's unlimited
         uint256 maxCollateralAmountAccepted;
         // Both initialized with 0;
-        uint256 currentTotalDepositedAmount;
-        uint256 currentTotalDebtBorrowed;
+        uint256 totalDepositedAmount;
+        uint256 totalDebtBorrowed;
         // For pausing depositing or borrowing, incase there is a need to do so
         bool depositingPaused;
         bool borrowingPaused;
