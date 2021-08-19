@@ -72,7 +72,7 @@ contract ShellDebtManager is
         emit DepositCollateral(userVault.ID, collateralAddress, msg.value);
     }
 
-    function borrowShellStableCoin(uint256 amountBorrowed)
+    function borrowShellStableCoin(uint256 requestedBorrowAmount)
         external
         onlyVaultOwner
         nonReentrant
@@ -84,7 +84,7 @@ contract ShellDebtManager is
 
         // User must deposit an amount larger than 0
         require(
-            amountBorrowed > 0,
+            requestedBorrowAmount > 0,
             "Borrow: Must borrow more an amount above 0"
         );
 
@@ -94,27 +94,27 @@ contract ShellDebtManager is
         // Has the global DEBT ceiling been hit
         uint256 memory SHELLTotalSupply = ShellStableCoin.totalSupply();
         require(
-            !(SHELLTotalSupply.add(amountBorrowed) <= ShellStableCoin.cap()),
+            SHELLTotalSupply.add(requestedBorrowAmount) < ShellStableCoin.cap(),
             "Borrow: debt ceiling hit, can not borrow."
         );
 
-        uint256 newTotalDebtBorrowed = amountToBorrow.add(
+        uint256 newTotalDebtBorrowed = requestedBorrowAmount.add(
             userVault.debtBorrowedAmount
         );
         uint256 newCollateralCoverageRatio = this.getCollateralCoverageRatio(
-            currentCollateralValue,
+            userVault.totalCollateralValue,
             newTotalDebtBorrowed
         );
 
         // VaultConfig storage vault = vaultAvailable[collateralAddress];
-        // Check if new Debt/Collateral ratio allows user to borrow
-        if (newCollateralCoverageRatio < baseCollateralCoverageRatio) {
+        // Check if new CCR allows user to borrow
+        if (newCollateralCoverageRatio <= baseCollateralCoverageRatio) {
             revert(
                 "Borrow: new borrow would put vault below minimum debt/collateral ratio"
             );
         }
-        // TODO: Inform user the vault is close to the min debt/collateral ratio
         // Set the new DC ratio for user
+        // TODO: Inform user the vault is close to the base CCR
         userVault.collateralCoverageRatio = newCollateralCoverageRatio;
 
         // If all is well, let the user borrow SHELL stablecoin for use
@@ -123,11 +123,11 @@ contract ShellDebtManager is
 
         // Update protocol's reserve amount (sell SHELL for USDC)
         // Transfer SHELL borrowed to ther user
-        _mint(msg.sender, amountBorrowed);
-        emit UserBorrowedDebt(vaultID, msg.sender, amountBorrowed);
+        _mint(msg.sender, requestedBorrowAmount);
+        emit UserBorrowedDebt(vaultID, msg.sender, requestedBorrowAmount);
     }
 
-    function repayShellStablecoinDebt(uint256 amountRepayed)
+    function repayShellStablecoinDebt(uint256 requestedRepayAmount)
         external
         onlyVaultOwner
         nonReentrant
@@ -138,11 +138,11 @@ contract ShellDebtManager is
         this.updateUserCollateralCoverageRatio(userVault);
 
         // User must deposit an amount larger than 0
-        require(amountRepayed > 0, "Repay: Must borrow more an amount above 0");
+        require(requestedRepayAmount > 0, "Repay: Must borrow more an amount above 0");
 
         // User must have the amount in the wallet too
         require(
-            balanceOf(msg.sender) >= amountRepayed,
+            balanceOf(msg.sender) >= requestedRepayAmount,
             "Repay: your balance is lesser than amount for repayment"
         );
 
@@ -150,16 +150,16 @@ contract ShellDebtManager is
         uint256 memory newCollateralCoverageRatio;
         uint256 memory amountBalance;
 
-        newTotalDebtBorrowed = userVault.debtBorrowedAmount.sub(amountRepayed);
+        newTotalDebtBorrowed = userVault.debtBorrowedAmount.sub(requestedRepayAmount);
         // Check to see if the repayed amount is larger or equal than the actual debt
         // In this scenario, only deduct the DEBT owed, and send back the rest to the user
-        if (amountRepayed >= userVault.debtBorrowedAmount) {
+        if (requestedRepayAmount >= userVault.debtBorrowedAmount) {
             newTotalDebtBorrowed = userVault.debtBorrowedAmount.sub(
                 userVault.debtBorrowedAmount
             );
-            amountBalance = amountRepayed.sub(userVault.debtBorrowedAmount);
+            // amountBalance = requestedRepayAmount.sub(userVault.debtBorrowedAmount);
             // Send back the SHELL balance that was left after paying the DEBT
-            _transfer(address(this), msg.sender, amountBalance);
+            // _transfer(address(this), msg.sender, amountBalance);
         }
 
         // Get the new debt/collateral ratio
@@ -170,15 +170,15 @@ contract ShellDebtManager is
 
         require(
             newCollateralCoverageRatio > userVault.collateralCoverageRatio,
-            "Repay: new CCR is less than previous user's CRR"
+            "Repay: new CCR should be less than previous user's CCR"
         );
 
         userVault.collateralCoverageRatio = newCollateralCoverageRatio;
         userVault.debtBorrowedAmount = newTotalDebtBorrowed;
 
         // Destroy the SHELL paid back
-        _burn(msg.sender, amountRepayed);
-        emit UserRepayedDebt(vaultID, msg.sender, amountRepayed);
+        _burn(msg.sender, requestedRepayAmount);
+        emit UserRepayedDebt(vaultID, msg.sender, requestedRepayAmount);
     }
 
     // A user's collateral coverage ratio should be above or equal to 0.95
@@ -222,7 +222,7 @@ contract ShellDebtManager is
             liquidationFraction
         );
         require(
-            balanceOf(msg.sender) >= debtAmountToBePaid,
+            balanceOf(msg.sender) < debtAmountToBePaid,
             "buyRiskyUserVault: liquidator doesn't have enough to pay debt"
         );
 
@@ -263,7 +263,6 @@ contract ShellDebtManager is
 
         // Now burn the SHELL tokens that the liquidator offered to pay the debt
         _burn(msg.sender, debtAmountToBePaid);
-
         emit BuyRiskyVault(riskyUserVault.ID, msg.sender, debtAmountToBePaid);
     }
 
