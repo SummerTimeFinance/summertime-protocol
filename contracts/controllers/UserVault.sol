@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: BSL1.1
 pragma solidity ^0.6.6;
 
-import "./SummerTimeVault.sol";
-
-contract UserVault is PriceOracle {
+contract UserVault {
     // VAULT ID count will start at 100,000
     uint256 private vaultIDCount = 100000;
 
@@ -41,7 +39,10 @@ contract UserVault is PriceOracle {
         external
         returns (uint256 createdVaultId)
     {
-        address memory vaultOwnerAddress = userAddress || msg.sender;
+        address vaultOwnerAddress = userAddress;
+        if (vaultOwnerAddress == address(0)) {
+            vaultOwnerAddress = msg.sender;
+        }
         // Check if the user has already created a vault with us
         UserVaultInfo storage userVault = userVaults[vaultOwnerAddress];
         require(
@@ -50,7 +51,7 @@ contract UserVault is PriceOracle {
         );
 
         if (userVault.ID == 0) {
-            uint256 memory createdVaultId = vaultIDCount++; // createdVaultId is return variable
+            createdVaultId = vaultIDCount++; // createdVaultId is return variable
             userVault.ID = createdVaultId;
             // userVault.tokenCollateralAmount[collateralType] = 0;
             vaultCurrentUsers.push(vaultOwnerAddress);
@@ -66,7 +67,7 @@ contract UserVault is PriceOracle {
     function transferUserVault(address newVaultOwnerAddress)
         external
         virtual
-        onlyVaultOwner
+        onlyVaultOwner(msg.sender)
         returns (uint256)
     {
         // Overridden (defined well) in ShellDebtManager.sol contract
@@ -75,7 +76,7 @@ contract UserVault is PriceOracle {
 
     function destroyUserVault()
         external
-        onlyVaultOwner
+        onlyVaultOwner(msg.sender)
         returns (uint256, bool)
     {
         UserVaultInfo storage userVault = userVaults[msg.sender];

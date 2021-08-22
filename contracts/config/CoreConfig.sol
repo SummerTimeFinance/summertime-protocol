@@ -6,6 +6,9 @@ import "../constants/Defaults.sol";
 contract SummerTimeCoreConfig is DefaultConfig {
     // Initial protocol-WIDE DEBT ceiling is: $100,000
     uint256 public summerTimeDebtCeiling = 100000e18;
+    
+    address public treasuryAdminAddress;
+    address public platformStabilityPool;
 
     // Used to set the mininum amount of debt a user can borrow
     uint256 public minimumDebtAmount = 0;

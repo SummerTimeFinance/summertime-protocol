@@ -2,8 +2,8 @@
 pragma solidity ^0.6.6;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
+// import "@openzeppelin/contracts/math/SafeMath.sol";
+// import "@uniswap/v2-periphery/contracts/libraries/SafeMath.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
 
 import "../libraries/MathUtils.sol";
@@ -11,7 +11,7 @@ import "./LinkPriceOracle.sol";
 
 // @reference https://blog.alphafinance.io/fair-lp-token-pricing/
 // @reference (Converting Fixed Point Values in the Binary Numerical System) https://cutt.ly/cQzTpyn
-contract FairLPPriceOracle is PriceOracle {
+contract FairLPPriceOracle is Ownable, PriceOracle {
     // using SafeMath for uint256;
     // using MathUtils for uint256;
 
@@ -37,7 +37,7 @@ contract FairLPPriceOracle is PriceOracle {
         uint256 sqrtP = MathUtils.sqrt(SafeMath.mul(tokenPrice0, tokenPrice1));
 
         return
-            SafeMath.div(
+            MathUtils.div(
                 SafeMath.mul(2, SafeMath.mul(sqrtR, sqrtP)),
                 totalSupply
             );

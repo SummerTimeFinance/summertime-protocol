@@ -9,9 +9,6 @@ contract VaultCollateralConfig is Ownable {
         string displayName;
         // The LP Collateral token address accepted by the platform
         address collateralTokenAddress;
-        // Is the vault a single asset collateral vault; only SET once
-        // eg. we can accept USDC only vaults, to help stablize the SHELL stablecoin
-        bool isSingleAssetCollateralVault;
         // The token addresses of the tokens paired together in the AMM
         address token0;
         address token1;
@@ -19,6 +16,9 @@ contract VaultCollateralConfig is Ownable {
         // Can be inferred from the frontend configuration
         // string token0Name;
         // string token1Name;
+        // This is to be able to support not only PancakeSwap, but any together
+        // UniswapV2 clone out there
+        address uniswapFactoryAddress;
         // The Pancake or MasterChef address being used for staking the LP
         address farmContractAddress;
         // The strategy address for this vault used by SummerTime for compounding
@@ -29,15 +29,8 @@ contract VaultCollateralConfig is Ownable {
         address token0PriceOracle;
         // The price oracle to get the PRICE of the token1
         address token1PriceOracle;
-        // This collateral vault custom interest rate, if still 0, it uses the global one
-        uint256 interestRate;
-        // This collateral vault specific debt ceiling, if 0, its unlimited
-        uint256 debtCeiling;
         // Initially value will be set to $1000, if 0, it's unlimited
         uint256 maxCollateralAmountAccepted;
-        // Both initialized with 0;
-        uint256 totalDepositedAmount;
-        uint256 totalDebtBorrowed;
         // For pausing depositing or borrowing, incase there is a need to do so
         bool depositingPaused;
         bool borrowingPaused;

@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: BSL1.1
 pragma solidity ^0.6.6;
+pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
+// import "@uniswap/v2-periphery/contracts/libraries/UniswapV2Library.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
-import "@uniswap/v2-periphery/contracts/libraries/UniswapV2Library.sol";
 
+import "../helpers/FairLPPriceOracle.sol";
 import "../controllers/UserVault.sol";
 import "../config/VaultConfig.sol";
 
@@ -24,28 +27,30 @@ import "../config/VaultConfig.sol";
 // Total addressable market size: $2.2B (BSC, using PancakeSwap only)
 // current collaterals that are accepted
 
-contract SummmerTimeVault is Ownable, VaultCollateralConfig, UserVault {
-    address internal immutable uniswapFactoryAddress;
+contract SummerTimeVault is Ownable, VaultCollateralConfig, UserVault {
+    using SafeMath for uint256;
+
     mapping(address => VaultConfig) internal vaultAvailable;
     address[] internal vaultCollateralAddresses;
+    address internal immutable uniswapFactoryAddress;
 
     // Check to see if any of the collateral being deposited by the user
     // is an accepted collateral by the protocol
     modifier collateralAccepted(address collateralAddress) {
-        bool memory collateralExists = false;
+        bool collateralExists = false;
         for (
-            int256 index = 0;
+            uint256 index = 0;
             index < vaultCollateralAddresses.length;
             index++
         ) {
             if (collateralAddress == vaultCollateralAddresses[index]) {
-                collateralExist = true;
+                collateralExists = true;
                 break;
             }
         }
 
         require(
-            collateralExist,
+            collateralExists,
             "collateralAccepted: COLLATERAL not available to borrow against."
         );
         _;
@@ -60,26 +65,28 @@ contract SummmerTimeVault is Ownable, VaultCollateralConfig, UserVault {
 
     function fetchCollateralPrice(address collateralAddress)
         external
-        returns (uint256 fairLPPrice)
+        returns (uint256)
     {
         // Update the current price of the LP collateral (price oracle check)
-        uint256 fairLPPrice = PriceOracle.getLastLPTokenPrice(
+        uint256 fairLPPrice = FairLPPriceOracle(0).getLastLPTokenPrice(
             collateralAddress
         );
-        VaultConfig storage vault = vault[collateralAddress];
+        VaultConfig storage vault = vaultAvailable[collateralAddress];
         vault.fairPrice = fairLPPrice;
+        return fairLPPrice;
     }
 
     function createNewCollateralVault(
-        string displayName,
+        string memory displayName,
         address token0Address,
         address token1Address,
         address token0PriceOracle,
         address token1PriceOracle,
         // address collateralAddress, // this is derived from token0 and token1
+        address uniswapFactoryAddress,
         // address farmContractAddress, // this is only used in the strategy contract
         address strategyAddress
-    ) external onlyOwner returns (VaultConfig) {
+    ) external onlyOwner returns (address) {
         if (bytes(displayName).length > 0) {
             revert(
                 "createNewCollateralVault: displayName not provided"
@@ -101,45 +108,55 @@ contract SummmerTimeVault is Ownable, VaultCollateralConfig, UserVault {
             revert("createNewCollateralVault: strategyAddress not provided");
         }
 
-        address addressForLPPair = UniswapV2Library.pairFor(
-            uniswapFactoryAddress,
+        address addressForLPPair = IUniswapV2Factory(uniswapFactoryAddress).getPair(
             token0Address,
             token1Address
         );
-        IUniswapV2Pair tokenPairsForLP = IUniswapV2Pair(addressForLPPair);
         if (addressForLPPair == address(0)) {
             revert("createNewCollateralVault: LP pair doesn't EXIST yet");
         }
 
+        IUniswapV2Pair tokenPairsForLP = IUniswapV2Pair(addressForLPPair);
         // token0, token1 can all be derived from the UniswapV2 interface
         address token0 = tokenPairsForLP.token0();
         address token1 = tokenPairsForLP.token1();
+        require(
+            token0 == token0Address && token1 == token1Address,
+            "createNewCollateralVault: pair token addresses aren't the same as provided"
+        );
 
-        VaultConfig storage vault = vaultAvailable[addressForLPPair];
+        VaultConfig storage newCollateralVault = vaultAvailable[addressForLPPair];
         // Check if the vault already exists
-        if (vault.collateralTokenAddress != address(0)) {
+        if (newCollateralVault.collateralTokenAddress != address(0)) {
             revert("createNewCollateralVault: VAULT EXISTS");
         }
 
-        vault = VaultConfig({
-            displayName: displayName,
-            collateralTokenAddress: addressForLPPair,
-            token0: token0Address,
-            token1: token1Address,
-            token0PriceOracle: token0PriceOracle,
-            token1PriceOracle: token1PriceOracle,
-            strategyAddress: strategyAddress,
-            maxCollateralAmountAccepted: uint256(1000).mul(10**18)
-        });
+        newCollateralVault.displayName = displayName;
+        newCollateralVault.collateralTokenAddress = addressForLPPair;
+        newCollateralVault.token0 = token0Address;
+        newCollateralVault.token1 = token1Address;
+        newCollateralVault.token0PriceOracle = token0PriceOracle;
+        newCollateralVault.token1PriceOracle = token1PriceOracle;
+        newCollateralVault.fairPrice = FairLPPriceOracle(0).createOrUpdateTokenPriceOracle(
+            addressForLPPair,
+            uniswapFactoryAddress
+        );
+        newCollateralVault.uniswapFactoryAddress = uniswapFactoryAddress;
+        newCollateralVault.farmContractAddress = uniswapFactoryAddress;
+        newCollateralVault.strategyAddress = strategyAddress;
+        newCollateralVault.maxCollateralAmountAccepted = SafeMath.mul(uint256(1000), uint256( 10**18));
+        newCollateralVault.depositingPaused = false;
+        newCollateralVault.borrowingPaused = false;
+        newCollateralVault.disabled = false;
 
         // Add vault collateral address to accepted collateral types
         vaultCollateralAddresses.push(addressForLPPair);
-        return vault;
+        return addressForLPPair;
     }
 
     function updateCollateralName(
         address collateralAddress,
-        string newDisplayName
+        string memory newDisplayName
     ) external onlyOwner collateralAccepted(collateralAddress) returns (bool) {
         if (bytes(newDisplayName).length == 0) {
             revert("CollateralName: invalid collateral name");
@@ -176,43 +193,43 @@ contract SummmerTimeVault is Ownable, VaultCollateralConfig, UserVault {
 
     function updatePriceOracle1Address(
         address collateralAddress,
-        address newPriceOracleAddress
+        address newPriceOracle0Address
     ) external onlyOwner collateralAccepted(collateralAddress) returns (bool) {
         VaultConfig storage vault = vaultAvailable[collateralAddress];
-        vault.priceOracleAddress = newPriceOracleAddress;
-        emit VaultPriceOracleAddressUpdated(newPriceOracleAddress);
+        vault.token0PriceOracle = newPriceOracle0Address;
+        emit VaultPriceOracle0AddressUpdated(newPriceOracle0Address);
         return true;
     }
 
     function updatePriceOracle2Address(
         address collateralAddress,
-        address newPriceOracle2Address
+        address newPriceOracle1Address
     ) external onlyOwner collateralAccepted(collateralAddress) returns (bool) {
         VaultConfig storage vault = vaultAvailable[collateralAddress];
-        vault.priceOracle2Address = newPriceOracle2Address;
-        emit VaultPriceOracle2AddressUpdated(newPriceOracle2Address);
+        vault.token1PriceOracle = newPriceOracle1Address;
+        emit VaultPriceOracle1AddressUpdated(newPriceOracle1Address);
         return true;
     }
 
-    function updateDebtCeiling(
-        address collateralAddress,
-        uint256 newDebtCeilingAmount
-    ) external onlyOwner collateralAccepted(collateralAddress) returns (bool) {
-        VaultConfig storage vault = vaultAvailable[collateralAddress];
-        vault.debtCeiling = newDebtCeilingAmount;
-        emit VaultDebtCeilingUpdated(newDebtCeilingAmount);
-        return true;
-    }
+    // function updateDebtCeiling(
+    //     address collateralAddress,
+    //     uint256 newDebtCeilingAmount
+    // ) external onlyOwner collateralAccepted(collateralAddress) returns (bool) {
+    //     VaultConfig storage vault = vaultAvailable[collateralAddress];
+    //     vault.debtCeiling = newDebtCeilingAmount;
+    //     emit VaultDebtCeilingUpdated(newDebtCeilingAmount);
+    //     return true;
+    // }
 
-    function updateCollateralCoverageRatio(
-        address collateralAddress,
-        uint256 newCollateralCoverageRatio
-    ) external onlyOwner collateralAccepted(collateralAddress) returns (bool) {
-        VaultConfig storage vault = vaultAvailable[collateralAddress];
-        vault.minimumDebtCollateralRatio = newCollateralCoverageRatio;
-        emit VaultCollateralCoverageRatioUpdated(newCollateralCoverageRatio);
-        return true;
-    }
+    // function updateCollateralCoverageRatio(
+    //     address collateralAddress,
+    //     uint256 newCollateralCoverageRatio
+    // ) external onlyOwner collateralAccepted(collateralAddress) returns (bool) {
+    //     VaultConfig storage vault = vaultAvailable[collateralAddress];
+    //     vault.minimumDebtCollateralRatio = newCollateralCoverageRatio;
+    //     emit VaultCollateralCoverageRatioUpdated(newCollateralCoverageRatio);
+    //     return true;
+    // }
 
     function updateMaxCollateralAmountAccepted(
         address collateralAddress,
@@ -270,13 +287,13 @@ contract SummmerTimeVault is Ownable, VaultCollateralConfig, UserVault {
     );
     event CollateralVaultState(address collateralAddress, bool isDisabled);
     event VaultFarmContractAddressUpdated(address farmContractAddress);
-    event VaultPriceOracle1AddressUpdated(address newPriceOracleAddress);
-    event VaultPriceOracle2AddressUpdated(address newPriceOracle2Address);
+    event VaultPriceOracle0AddressUpdated(address newPriceOracle0Address);
+    event VaultPriceOracle1AddressUpdated(address newPriceOracle1Address);
     event VaultDebtCeilingUpdated(uint256 newDebtCeiling);
     event VaultCollateralCoverageRatioUpdated(
         uint256 newCollateralCoverageRatio
     );
-    event VaultMaxCollateralAmountUpdated(uint256 newMaxCollateralAmount);
+    event VaultMaxCollateralAmountAcceptedUpdated(uint256 newMaxCollateralAmount);
     event VaultDepositingState(bool isDisabled);
     event VaultBorrowingState(bool isDisabled);
 }

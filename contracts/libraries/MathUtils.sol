@@ -1,12 +1,21 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.6.6;
 
-import "@openzeppelin/contracts/math/SafeMath.sol";
+// import "@openzeppelin/contracts/math/SafeMath.sol";
+// import "@uniswap/v2-periphery/contracts/libraries/SafeMath.sol";
 
 // computes square roots using the babylonian method
 // https://en.wikipedia.org/wiki/Methods_of_computing_square_roots#Babylonian_method
 library MathUtils {
-    using SafeMath for uint256;
+    function div(uint256 a, uint256 b) internal pure returns (uint256) {
+        require(b > 0, "MathUtils: division by zero");
+        return a / b;
+    }
+
+    function div(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+        require(b > 0, errorMessage);
+        return a / b;
+    }
 
     // credit for this implementation goes to
     // https://github.com/abdk-consulting/abdk-libraries-solidity/blob/master/ABDKMath64x64.sol#L687

@@ -17,22 +17,10 @@ contract ShellStableCoin is ERC20, ERC20Burnable, ERC20Permit, Ownable {
         ERC20("SummerTime Shell Stablecoin", "SHELL")
         ERC20Permit("SummerTime Shell Stablecoin")
     {
-        decimalsPlaces18 = 10**decimals();
+        decimalsPlaces18 = 10**uint(decimals());
         require(cap_ > 0, "ERC20Capped: cap is 0");
         _cap = cap_;
         // _mint(msg.sender, 0); // nothing to send to the user
-    }
-
-    function _mint(address account, uint256 amount)
-        internal
-        virtual
-        override(ERC20)
-    {
-        require(
-            ERC20.totalSupply() + amount <= cap(),
-            "SHELL: Max cap exceeded"
-        );
-        super._mint(account, amount);
     }
 
     function _beforeTokenTransfer(
@@ -45,6 +33,18 @@ contract ShellStableCoin is ERC20, ERC20Burnable, ERC20Permit, Ownable {
             recipient != address(this),
             "beforeTransfer: invalid recipient"
         );
+    }
+    
+    function _mint(address account, uint256 amount)
+        internal
+        virtual
+        override(ERC20)
+    {
+        require(
+            ERC20.totalSupply() + amount <= cap(),
+            "SHELL: Max cap exceeded"
+        );
+        super._mint(account, amount);
     }
 
     // @dev Returns the cap on the token's total supply.
