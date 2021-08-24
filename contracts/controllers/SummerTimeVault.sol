@@ -8,9 +8,9 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
 
-import "../helpers/FairLPPriceOracle.sol";
-import "../controllers/UserVault.sol";
 import "../config/VaultConfig.sol";
+import "../controllers/UserVault.sol";
+import "../interfaces/FairLPPriceOracle.sol";
 
 // The following collateral addresses will be supported (progressively):
 // BTCB-ETH (old is gold, proven) [127M]
@@ -30,9 +30,9 @@ import "../config/VaultConfig.sol";
 contract SummerTimeVault is Ownable, VaultCollateralConfig, UserVault {
     using SafeMath for uint256;
 
+    FairLPPriceOracle internal immutable fairLPPriceSource;
     mapping(address => VaultConfig) internal vaultAvailable;
     address[] internal vaultCollateralAddresses;
-    address internal immutable uniswapFactoryAddress;
 
     // Check to see if any of the collateral being deposited by the user
     // is an accepted collateral by the protocol
@@ -56,24 +56,15 @@ contract SummerTimeVault is Ownable, VaultCollateralConfig, UserVault {
         _;
     }
 
-    constructor(address _uniswapFactoryAddress) internal {
-        if (_uniswapFactoryAddress == address(0)) {
-            revert("SummerTimeVaultInit: Invalid factory address provided.");
+    constructor(address fairLPPriceOracleAddress) internal {
+        if (fairLPPriceOracleAddress == address(0)) {
+            revert(
+                "SummerTimeVaultConstructor: Invalid factory address provided."
+            );
         }
-        uniswapFactoryAddress = _uniswapFactoryAddress;
-    }
-
-    function fetchCollateralPrice(address collateralAddress)
-        external
-        returns (uint256)
-    {
-        // Update the current price of the LP collateral (price oracle check)
-        uint256 fairLPPrice = FairLPPriceOracle(0).getLastLPTokenPrice(
-            collateralAddress
-        );
-        VaultConfig storage vault = vaultAvailable[collateralAddress];
-        vault.fairPrice = fairLPPrice;
-        return fairLPPrice;
+        fairLPPriceSource = FairLPPriceOracle(fairLPPriceOracleAddress);
+        // Note: that external functions of a contract cannot be called while it is being constructed.
+        // this.createUserVault(msg.sender);
     }
 
     function createNewCollateralVault(
@@ -81,34 +72,40 @@ contract SummerTimeVault is Ownable, VaultCollateralConfig, UserVault {
         address token0Address,
         address token1Address,
         address token0PriceOracle,
-        address token1PriceOracle,
         // address collateralAddress, // this is derived from token0 and token1
-        address uniswapFactoryAddress,
+        address token1PriceOracle,
+        address vaultUniswapV2FactoryAddress,
         // address farmContractAddress, // this is only used in the strategy contract
         address strategyAddress
     ) external onlyOwner returns (address) {
         if (bytes(displayName).length > 0) {
-            revert(
-                "createNewCollateralVault: displayName not provided"
-            );
+            revert("createNewCollateralVault: displayName not provided");
         }
-        if (address(token0Address) != address(0)) {
+        if (token0Address != address(0)) {
             revert("createNewCollateralVault: token0Address not provided");
         }
-        if (address(token1Address) != address(0)) {
+        if (token1Address != address(0)) {
             revert("createNewCollateralVault: token1Address not provided");
         }
-        if (address(token0PriceOracle) != address(0)) {
+        if (token0PriceOracle != address(0)) {
             revert("createNewCollateralVault: token0PriceOracle not provided");
         }
-        if (address(token1PriceOracle) != address(0)) {
+        if (token1PriceOracle != address(0)) {
             revert("createNewCollateralVault: token1PriceOracle not provided");
         }
-        if (address(strategyAddress) != address(0)) {
+        if (strategyAddress != address(0)) {
             revert("createNewCollateralVault: strategyAddress not provided");
         }
+        if (vaultUniswapV2FactoryAddress != address(0)) {
+            revert(
+                "createNewCollateralVault: uniswapFactoryAddress not provided"
+            );
+        }
 
-        address addressForLPPair = IUniswapV2Factory(uniswapFactoryAddress).getPair(
+        IUniswapV2Factory uniswapV2Factory = IUniswapV2Factory(
+            vaultUniswapV2FactoryAddress
+        );
+        address addressForLPPair = uniswapV2Factory.getPair(
             token0Address,
             token1Address
         );
@@ -125,7 +122,9 @@ contract SummerTimeVault is Ownable, VaultCollateralConfig, UserVault {
             "createNewCollateralVault: pair token addresses aren't the same as provided"
         );
 
-        VaultConfig storage newCollateralVault = vaultAvailable[addressForLPPair];
+        VaultConfig storage newCollateralVault = vaultAvailable[
+            addressForLPPair
+        ];
         // Check if the vault already exists
         if (newCollateralVault.collateralTokenAddress != address(0)) {
             revert("createNewCollateralVault: VAULT EXISTS");
@@ -133,18 +132,20 @@ contract SummerTimeVault is Ownable, VaultCollateralConfig, UserVault {
 
         newCollateralVault.displayName = displayName;
         newCollateralVault.collateralTokenAddress = addressForLPPair;
-        newCollateralVault.token0 = token0Address;
-        newCollateralVault.token1 = token1Address;
+        newCollateralVault.token0 = token0;
+        newCollateralVault.token1 = token1;
         newCollateralVault.token0PriceOracle = token0PriceOracle;
         newCollateralVault.token1PriceOracle = token1PriceOracle;
-        newCollateralVault.fairPrice = FairLPPriceOracle(0).createOrUpdateTokenPriceOracle(
-            addressForLPPair,
-            uniswapFactoryAddress
+        newCollateralVault.fairPrice = fairLPPriceSource.getLastLPTokenPrice(
+            addressForLPPair
         );
-        newCollateralVault.uniswapFactoryAddress = uniswapFactoryAddress;
-        newCollateralVault.farmContractAddress = uniswapFactoryAddress;
+        newCollateralVault.uniswapFactoryAddress = tokenPairsForLP.factory();
+        // newCollateralVault.farmContractAddress = uniswapFactoryAddress;
         newCollateralVault.strategyAddress = strategyAddress;
-        newCollateralVault.maxCollateralAmountAccepted = SafeMath.mul(uint256(1000), uint256( 10**18));
+        newCollateralVault.maxCollateralAmountAccepted = SafeMath.mul(
+            uint256(1000),
+            uint256(10**18)
+        );
         newCollateralVault.depositingPaused = false;
         newCollateralVault.borrowingPaused = false;
         newCollateralVault.disabled = false;
@@ -191,7 +192,7 @@ contract SummerTimeVault is Ownable, VaultCollateralConfig, UserVault {
         return true;
     }
 
-    function updatePriceOracle1Address(
+    function updatePriceOracle0Address(
         address collateralAddress,
         address newPriceOracle0Address
     ) external onlyOwner collateralAccepted(collateralAddress) returns (bool) {
@@ -201,7 +202,7 @@ contract SummerTimeVault is Ownable, VaultCollateralConfig, UserVault {
         return true;
     }
 
-    function updatePriceOracle2Address(
+    function updatePriceOracle1Address(
         address collateralAddress,
         address newPriceOracle1Address
     ) external onlyOwner collateralAccepted(collateralAddress) returns (bool) {
@@ -280,6 +281,20 @@ contract SummerTimeVault is Ownable, VaultCollateralConfig, UserVault {
         return vault.borrowingPaused;
     }
 
+    function fetchCollateralPrice(address collateralAddress)
+        external
+        collateralAccepted(collateralAddress)
+        returns (uint256)
+    {
+        VaultConfig storage vault = vaultAvailable[collateralAddress];
+        // Update the current price of the LP collateral (price oracle check)
+        uint256 fairLPPrice = fairLPPriceSource.getLastLPTokenPrice(
+            collateralAddress
+        );
+        vault.fairPrice = fairLPPrice;
+        return fairLPPrice;
+    }
+
     event NewCollateralVaultAvailable(
         address collateralAddress,
         address token0,
@@ -293,7 +308,9 @@ contract SummerTimeVault is Ownable, VaultCollateralConfig, UserVault {
     event VaultCollateralCoverageRatioUpdated(
         uint256 newCollateralCoverageRatio
     );
-    event VaultMaxCollateralAmountAcceptedUpdated(uint256 newMaxCollateralAmount);
+    event VaultMaxCollateralAmountAcceptedUpdated(
+        uint256 newMaxCollateralAmount
+    );
     event VaultDepositingState(bool isDisabled);
     event VaultBorrowingState(bool isDisabled);
 }
