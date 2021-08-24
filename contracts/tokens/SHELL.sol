@@ -17,7 +17,7 @@ contract ShellStableCoin is ERC20, ERC20Burnable, ERC20Permit, Ownable {
         ERC20("SummerTime Shell Stablecoin", "SHELL")
         ERC20Permit("SummerTime Shell Stablecoin")
     {
-        decimalsPlaces18 = 10**uint(decimals());
+        decimalsPlaces18 = 10**uint256(decimals());
         require(cap_ > 0, "ERC20Capped: cap is 0");
         _cap = cap_;
         // _mint(msg.sender, 0); // nothing to send to the user
@@ -34,7 +34,7 @@ contract ShellStableCoin is ERC20, ERC20Burnable, ERC20Permit, Ownable {
             "beforeTransfer: invalid recipient"
         );
     }
-    
+
     function _mint(address account, uint256 amount)
         internal
         virtual

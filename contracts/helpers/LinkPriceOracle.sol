@@ -24,7 +24,7 @@ contract PriceOracle is Ownable {
     uint256 private constant decimalPlaces10 = 10**10;
     // The collateral token and it's price aggregator
     mapping(address => AggregatorV3Interface) public tokenAggregator;
-    // Last acquired token to price mapping.
+    // Last acquired price of collateral token mapping
     mapping(address => PriceInfo) public tokenPriceFeed;
 
     // constructor() public { }
@@ -67,6 +67,8 @@ contract PriceOracle is Ownable {
         return priceToUint;
     }
 
+    // @note the owner should be updated to be the ShellDebtManagement contract
+    // Or have both the contract & deployer address as owners
     function createOrUpdateTokenPriceOracle(address _token, address _oracle)
         external
         onlyOwner

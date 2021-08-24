@@ -4,4 +4,4 @@ pragma solidity ^0.6.6;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./controllers/ShellDebtManager.sol";
 
-contract SummerTimeCore is ShellDebtManager, Ownable {}
+contract SummerTimeCore is Ownable, ShellDebtManager {}
