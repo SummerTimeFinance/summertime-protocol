@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 import "../config/CoreConfig.sol";
-// import "../helpers/FairLPPriceOracle.sol";
+import "../interfaces/InterestRateModel.sol";
 import "../tokens/SHELL.sol";
 import "./SummerTimeVault.sol";
 
@@ -16,17 +16,28 @@ contract ShellDebtManager is
     ShellStableCoin,
     ReentrancyGuard
 {
+    /// @notice the interest rate model contract used to depict the interest rate
+    InterestRateModel internal platformInterestRateModel;
+
     // @dev constructor will initialize SHELL with a cap (debt ceiling) of $100,000
     // @param uint: summerTimeDebtCeiling (global config variable)
     // @param address: _uniswapFactoryAddress this is PancakeSwap's LP Factory address
-    constructor(address fairLPPriceOracleAddress)
+    constructor(
+        address fairLPPriceOracleAddress,
+        address interestRateModelAddress
+    )
         internal
         ShellStableCoin(summerTimeDebtCeiling)
         SummerTimeVault(fairLPPriceOracleAddress)
     {
+        require(
+            interestRateModelAddress != address(0),
+            "DebtManager: interest rate model not given"
+        );
         // TODO: Create the treasury vault, to absorb liquidation collateral fee
         // And also to absorb & hold other supported assets such as USDC
         treasuryAdminAddress = msg.sender;
+        platformInterestRateModel = InterestRateModel(interestRateModelAddress);
     }
 
     function depositCollateral(address collateralAddress)
@@ -62,9 +73,23 @@ contract ShellDebtManager is
         );
         // Update the user's current collateral amount & value
         userVault.collateralAmount[collateralAddress] = newCollateralAmount;
+
+        // @TIP: Assignments between storage and memory
+        // (or from calldata) always create an independent copy.
+        uint256 previousTotalCollateralValue = userVault.totalCollateralValue;
         // Update user's collateral total value to the current value according to current market prices
         // IF the user has any DEBT, calculate & add to the DEBT the new accrued interest amount
         updateUserCollateralCoverageRatio(userVault);
+
+        platformTotalCollateralValue = SafeMath.sub(
+            platformTotalCollateralValue,
+            previousTotalCollateralValue
+        );
+
+        platformTotalCollateralValue = SafeMath.add(
+            platformTotalCollateralValue,
+            userVault.totalCollateralValue
+        );
 
         // TODO: Collect rewards, and compound this vault (yeild-optimization part not written yet)
         emit UserDepositedCollateral(
@@ -367,7 +392,13 @@ contract ShellDebtManager is
             currentTimestamp - userVault.lastDebtUpdate
         );
         uint256 interestToBeApplied = timeDifference.mul(
-            perSecondInterestRate(platformInterestRate)
+            perSecondInterestRate(
+                platformInterestRateModel.getBorrowRate(
+                    totalCollateralValue,
+                    totalDebtBorrowed,
+                    reserves
+                )
+            )
         );
         uint256 accruedInterest = interestToBeApplied.mul(
             userVault.debtBorrowedAmount
@@ -446,10 +477,27 @@ contract ShellDebtManager is
         return collateralChunks;
     }
 
+    function perSecondInterestRate(uint256 interestRate)
+        internal
+        pure
+        returns (uint256)
+    {
+        uint256 interestRatePerSecond = SafeMath.div(
+            SafeMath.mul(interestRate, decimal18Places),
+            secondsInYear
+        );
+        return interestRatePerSecond;
+    }
+
     event UserDepositedCollateral(
         uint256 vaultID,
         address collateralAddress,
         uint256 amountDeposited
+    );
+    event UserWithdrewCollateral(
+        uint256 vaultID,
+        address collateralAddress,
+        uint256 amountWithdrawn
     );
     event UserBorrowedDebt(uint256 vaultID, address vaultOwner, uint256 amount);
     event UserRepayedDebt(uint256 vaultID, address vaultOwner, uint256 amount);
