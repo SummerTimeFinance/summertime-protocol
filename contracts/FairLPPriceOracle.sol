@@ -6,8 +6,8 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 // import "@uniswap/v2-periphery/contracts/libraries/SafeMath.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
 
-import "../libraries/MathUtils.sol";
-import "./LinkPriceOracle.sol";
+import "./helpers/LinkPriceOracle.sol";
+import "./libraries/MathUtils.sol";
 
 // @reference https://blog.alphafinance.io/fair-lp-token-pricing/
 // @reference (Converting Fixed Point Values in the Binary Numerical System) https://cutt.ly/cQzTpyn
