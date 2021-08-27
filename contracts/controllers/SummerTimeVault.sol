@@ -30,7 +30,7 @@ import "../interfaces/FairLPPriceOracle.sol";
 contract SummerTimeVault is Ownable, VaultCollateralConfig, UserVault {
     using SafeMath for uint256;
 
-    FairLPPriceOracle internal immutable fairLPPriceSource;
+    FairLPPriceOracle internal fairLPPriceSource;
     mapping(address => VaultConfig) internal vaultAvailable;
     address[] internal vaultCollateralAddresses;
 
