@@ -4,14 +4,20 @@ pragma solidity ^0.6.6;
 import "../constants/Defaults.sol";
 
 contract SummerTimeCoreConfig is DefaultConfig {
+    // The treasury admin will be set as the deployer address
+    address public treasuryAdminAddress;
+
+    // This is the platform's stability pool address
+    address public platformStabilityPool;
+
     // Initial protocol-WIDE DEBT ceiling is: $100,000
     uint256 public summerTimeDebtCeiling = 100000e18;
-    
-    address public treasuryAdminAddress;
-    address public platformStabilityPool;
 
     // Used to set the mininum amount of debt a user can borrow
     uint256 public minimumDebtAmount = 0;
+
+    // Holds the total collateral value deposited into SummerTime
+    uint256 public platformTotalCollateralValue = 0;
 
     // The base can be used to calculate a new CCR for a new vault,
     // or updating an existing one, equal to 1
@@ -21,17 +27,14 @@ contract SummerTimeCoreConfig is DefaultConfig {
     // undercollateralized and subject to liquidation for each collateral.
     uint256 public liquidationThreshold = 95e17;
 
-    // Targeted CCR of a vault, once liquidation is triggered
+    // Targeted CCR of a vault (1.2), once liquidation is triggered
     uint256 public targetedCollateralCoverageRatio = 12e17;
 
     // discount applied the user's collateralL: 50% (0.5)
     uint256 public discountApplied = 5e17;
 
-    // Base interest rate: 0.5%
-    uint256 public baseInterestRate = 50e17;
-
     // Default platform interest rate: 5%
-    uint256 public platformInterestRate = 5e18;
+    address public platformInterestRateAddress;
 
     // On liquidation, 4/9 of a vault's collateral is taken
     uint256 public liquidationFraction = 44444e13;
@@ -60,14 +63,4 @@ contract SummerTimeCoreConfig is DefaultConfig {
     // For protocol-WIDE pausing depositing or borrowing, incase there is a need to do so
     bool public protocolDepositingPaused = false;
     bool public protocolBorrowingPaused = false;
-
-    function perSecondInterestRate(uint256 interestRate)
-        internal
-        pure
-        returns (uint256)
-    {
-        uint256 everySecondInterestRate = (interestRate * decimal18Places) /
-            secondsInYear;
-        return everySecondInterestRate;
-    }
 }
