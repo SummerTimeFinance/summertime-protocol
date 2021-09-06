@@ -99,6 +99,62 @@ contract ShellDebtManager is
         );
     }
 
+    function withdrawCollateral(
+        address collateralAddress,
+        uint256 amountToWithdraw
+    )
+        external
+        payable
+        collateralAccepted(collateralAddress)
+        onlyVaultOwner(msg.sender)
+        nonReentrant
+    {
+        UserVaultInfo storage userVault = userVaults[msg.sender];
+        uint256 currentCollateralBalance = userVault.collateralAmount[
+            collateralAddress
+        ];
+        // user's previous total collateral value
+        uint256 userPrevTotalCollateralValue = userVault.totalCollateralValue;
+
+        require(
+            currentCollateralBalance >= amountToWithdraw,
+            "Vault doesn't have the amount of collateral requested"
+        );
+
+        uint256 newCollateralBalance = SafeMath.sub(
+            currentCollateralBalance,
+            amountToWithdraw
+        );
+
+        userVault.collateralAmount[collateralAddress] = newCollateralBalance;
+        updateUserCollateralCoverageRatio(userVault);
+
+        // Check if user's new CCR will be below the required CCR
+        if (userVault.collateralCoverageRatio < baseCollateralCoverageRatio) {
+            revert(
+                "Withdrawal: withdrawal would put vault below minimum debt/collateral ratio"
+            );
+        }
+
+        // now send the amount to the vault owner's address
+        msg.sender.transfer(amountToWithdraw);
+
+        platformTotalCollateralValue = SafeMath.sub(
+            platformTotalCollateralValue,
+            userPrevTotalCollateralValue
+        );
+        platformTotalCollateralValue = SafeMath.add(
+            platformTotalCollateralValue,
+            userVault.totalCollateralValue
+        );
+
+        emit UserWithdrewCollateral(
+            userVault.ID,
+            collateralAddress,
+            amountToWithdraw
+        );
+    }
+
     function borrowShellStableCoin(uint256 requestedBorrowAmount)
         external
         onlyVaultOwner(msg.sender)
