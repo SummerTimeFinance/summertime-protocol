@@ -39,6 +39,7 @@ contract UserVault {
         external
         returns (uint256 createdVaultId)
     {
+        bool userVaultUnarchived = false;
         address vaultOwnerAddress = userAddress;
         if (vaultOwnerAddress == address(0)) {
             vaultOwnerAddress = msg.sender;
@@ -55,12 +56,13 @@ contract UserVault {
             userVault.ID = createdVaultId;
             // userVault.tokenCollateralAmount[collateralType] = 0;
             vaultCurrentUsers.push(vaultOwnerAddress);
-            emit UserVaultCreated(createdVaultId, vaultOwnerAddress, false);
         } else {
             // If the vault exits, just "undelete" it
             userVault.softDeleted = false;
-            emit UserVaultCreated(createdVaultId, vaultOwnerAddress, true);
+            userVaultUnarchived = true;
         }
+
+        emit UserVaultCreated(createdVaultId, vaultOwnerAddress, userVaultUnarchived);
         return createdVaultId;
     }
 

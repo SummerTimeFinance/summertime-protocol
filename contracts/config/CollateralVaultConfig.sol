@@ -3,7 +3,7 @@ pragma solidity ^0.6.6;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract VaultCollateralConfig is Ownable {
+contract CollateralVaultConfig is Ownable {
     struct VaultConfig {
         // eg. CAKE/BNB
         string displayName;
@@ -16,11 +16,14 @@ contract VaultCollateralConfig is Ownable {
         // Can be inferred from the frontend configuration
         // string token0Name;
         // string token1Name;
-        // This is to be able to support not only PancakeSwap, but any together
-        // UniswapV2 clone out there
+        // This is to be able to support not only PancakeSwap,
+        // but any together UniswapV2 clone out there
         address uniswapFactoryAddress;
         // The Pancake or MasterChef address being used for staking the LP
-        address farmContractAddress;
+        // By default, it's 0, which should reference PCS
+        uint256 index;
+        // The MasterChef pool ID of this LP collateral
+        address farmPoolID;
         // The strategy address for this vault used by SummerTime for compounding
         address strategyAddress;
         // the current fair LP price

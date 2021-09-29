@@ -2,6 +2,7 @@
 pragma solidity ^0.6.6;
 
 interface IPancakeswapFarm {
+    // The total number of pools supported by the farm
     function poolLength() external view returns (uint256);
 
     function userInfo() external view returns (uint256);
