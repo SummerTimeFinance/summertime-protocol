@@ -8,8 +8,10 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
 
-import "../config/VaultConfig.sol";
+import "../config/GeneralVaultConfig.sol";
+import "../config/CollateralVaultConfig.sol";
 import "../controllers/UserVault.sol";
+
 import "../interfaces/FairLPPriceOracle.sol";
 
 // The following collateral addresses will be supported (progressively):
@@ -27,10 +29,11 @@ import "../interfaces/FairLPPriceOracle.sol";
 // Total addressable market size: $2.2B (BSC, using PancakeSwap only)
 // current collaterals that are accepted
 
-contract SummerTimeVault is Ownable, VaultCollateralConfig, UserVault {
+contract SummerTimeVault is Ownable, GeneralVaultConfig, CollateralVaultConfig, UserVault {
     using SafeMath for uint256;
 
     FairLPPriceOracle internal fairLPPriceSource;
+    // structure: mapping(collateralAddress => VaultConfig)
     mapping(address => VaultConfig) internal vaultAvailable;
     address[] internal vaultCollateralAddresses;
 
@@ -63,7 +66,7 @@ contract SummerTimeVault is Ownable, VaultCollateralConfig, UserVault {
             );
         }
         fairLPPriceSource = FairLPPriceOracle(fairLPPriceOracleAddress);
-        // Note: that external functions of a contract cannot be called while it is being constructed.
+        // Warning: that external functions of a contract cannot be called while it is being constructed.
         // this.createUserVault(msg.sender);
     }
 
@@ -74,7 +77,8 @@ contract SummerTimeVault is Ownable, VaultCollateralConfig, UserVault {
         address token0PriceOracle,
         // address collateralAddress, // this is derived from token0 and token1
         address token1PriceOracle,
-        address vaultUniswapV2FactoryAddress,
+        address uniswapV2FactoryAddress,
+        uint256 farmingContractIndex,
         // address farmContractAddress, // this is only used in the strategy contract
         address strategyAddress
     ) external onlyOwner returns (address) {
@@ -96,14 +100,14 @@ contract SummerTimeVault is Ownable, VaultCollateralConfig, UserVault {
         if (strategyAddress != address(0)) {
             revert("createNewCollateralVault: strategyAddress not provided");
         }
-        if (vaultUniswapV2FactoryAddress != address(0)) {
+        if (uniswapV2FactoryAddress != address(0)) {
             revert(
                 "createNewCollateralVault: uniswapFactoryAddress not provided"
             );
         }
 
         IUniswapV2Factory uniswapV2Factory = IUniswapV2Factory(
-            vaultUniswapV2FactoryAddress
+            uniswapV2FactoryAddress
         );
         address addressForLPPair = uniswapV2Factory.getPair(
             token0Address,
@@ -149,6 +153,11 @@ contract SummerTimeVault is Ownable, VaultCollateralConfig, UserVault {
         newCollateralVault.depositingPaused = false;
         newCollateralVault.borrowingPaused = false;
         newCollateralVault.disabled = false;
+
+        // By default, 0 references PCS, so it doesn't have to be set
+        if (farmingContractIndex != 0) {
+            newCollateralVault.index = farmingContractIndex;
+        }
 
         // Add vault collateral address to accepted collateral types
         vaultCollateralAddresses.push(addressForLPPair);
