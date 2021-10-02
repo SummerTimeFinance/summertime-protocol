@@ -3,7 +3,7 @@ pragma solidity ^0.6.6;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract VaultCollateralConfig is Ownable {
+contract GeneralVaultConfig is Ownable {
     // This collateral vault custom interest rate, if still 0, it uses the global one
     uint256 interestRate;
     // This collateral vault specific debt ceiling, if 0, its unlimited

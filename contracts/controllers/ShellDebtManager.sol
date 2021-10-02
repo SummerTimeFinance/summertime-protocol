@@ -5,39 +5,44 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 import "../config/CoreConfig.sol";
-import "../interfaces/InterestRateModel.sol";
 import "../tokens/SHELL.sol";
+import "../interfaces/InterestRateModel.sol";
+import "../interfaces/FarmingStrategy.sol";
+
 import "./SummerTimeVault.sol";
 
 contract ShellDebtManager is
     Ownable,
+    ReentrancyGuard,
     SummerTimeCoreConfig,
     SummerTimeVault,
-    ShellStableCoin,
-    ReentrancyGuard
+    ShellStableCoin
 {
     /// @notice the interest rate model contract used to depict the interest rate
     InterestRateModel internal platformInterestRateModel;
+    FarmingStrategy internal farmingStrategy;
 
     // @dev constructor will initialize SHELL with a cap (debt ceiling) of $100,000
     // @param uint: summerTimeDebtCeiling (global config variable)
     // @param address: _uniswapFactoryAddress this is PancakeSwap's LP Factory address
     constructor(
-        address fairLPPriceOracleAddress,
-        address interestRateModelAddress
+        address fairLPPriceOracle,
+        address interestRateModel,
+        address farmingStrategyAddress
     )
         internal
         ShellStableCoin(summerTimeDebtCeiling)
-        SummerTimeVault(fairLPPriceOracleAddress)
+        SummerTimeVault(fairLPPriceOracle)
     {
         require(
-            interestRateModelAddress != address(0),
-            "DebtManager: interest rate model not given"
+            interestRateModel != address(0),
+            "DebtManager: interest rate model not provided"
         );
         // TODO: Create the treasury vault, to absorb liquidation collateral fee
         // And also to absorb & hold other supported assets such as USDC
         treasuryAdminAddress = msg.sender;
-        platformInterestRateModel = InterestRateModel(interestRateModelAddress);
+        platformInterestRateModel = InterestRateModel(interestRateModel);
+        farmingStrategy = FarmingStrategy(farmingStrategyAddress);
     }
 
     function depositCollateral(address collateralAddress)
@@ -91,7 +96,14 @@ contract ShellDebtManager is
             userVault.totalCollateralValue
         );
 
-        // TODO: Collect rewards, and compound this vault (yeild-optimization part not written yet)
+        VaultConfig storage collateralVault = vaultAvailable[collateralAddress];
+        // Move the user's amount from their wallet to the farming strategy
+        farmingStrategy.deposit(
+            collateralVault.index,
+            collateralAddress,
+            msg.value
+        );
+
         emit UserDepositedCollateral(
             userVault.ID,
             collateralAddress,
@@ -117,7 +129,7 @@ contract ShellDebtManager is
         uint256 userPrevTotalCollateralValue = userVault.totalCollateralValue;
 
         require(
-            currentCollateralBalance >= amountToWithdraw,
+            amountToWithdraw <= currentCollateralBalance,
             "Vault doesn't have the amount of collateral requested"
         );
 
@@ -132,12 +144,9 @@ contract ShellDebtManager is
         // Check if user's new CCR will be below the required CCR
         if (userVault.collateralCoverageRatio < baseCollateralCoverageRatio) {
             revert(
-                "Withdrawal: withdrawal would put vault below minimum debt/collateral ratio"
+                "Withdrawal: would put vault below minimum debt/collateral ratio"
             );
         }
-
-        // now send the amount to the vault owner's address
-        msg.sender.transfer(amountToWithdraw);
 
         platformTotalCollateralValue = SafeMath.sub(
             platformTotalCollateralValue,
@@ -147,6 +156,16 @@ contract ShellDebtManager is
             platformTotalCollateralValue,
             userVault.totalCollateralValue
         );
+
+        VaultConfig storage collateralVault = vaultAvailable[collateralAddress];
+        // now send the amount to the vault owner's address
+        farmingStrategy.withdraw(
+            collateralVault.index,
+            msg.sender,
+            collateralAddress,
+            amountToWithdraw
+        );
+        // msg.sender.transfer(amountToWithdraw);
 
         emit UserWithdrewCollateral(
             userVault.ID,
@@ -182,22 +201,22 @@ contract ShellDebtManager is
         );
 
         uint256 newTotalDebtBorrowed = SafeMath.add(
-            requestedBorrowAmount,
-            userVault.debtBorrowedAmount
+            userVault.debtBorrowedAmount,
+            requestedBorrowAmount
         );
         uint256 newCollateralCoverageRatio = getCollateralCoverageRatio(
             userVault.totalCollateralValue,
             newTotalDebtBorrowed
         );
-
         // VaultConfig storage vault = vaultAvailable[collateralAddress];
-        // Check if new CCR allows user to borrow
+
+        // Check if new CCR isn't over the base CCR, thus allow the user to borrow
         if (newCollateralCoverageRatio < baseCollateralCoverageRatio) {
             revert(
                 "Borrow: new borrow would put vault below minimum debt/collateral ratio"
             );
         }
-        // Set the new DC ratio for user
+        // If the new CCR is all good, set the new DC ratio for user
         // TODO: Inform user the vault is close to the base CCR
         userVault.collateralCoverageRatio = newCollateralCoverageRatio;
 
@@ -206,7 +225,7 @@ contract ShellDebtManager is
         userVault.debtBorrowedAmount = newTotalDebtBorrowed;
 
         // Update protocol's reserve amount (sell SHELL for USDC)
-        // Transfer SHELL borrowed to ther user
+        // Mint & transfer SHELL borrowed to the user
         _mint(msg.sender, requestedBorrowAmount);
         emit UserBorrowedDebt(userVault.ID, msg.sender, requestedBorrowAmount);
     }
@@ -227,17 +246,17 @@ contract ShellDebtManager is
             "Repay: Must borrow more an amount above 0"
         );
 
-        // User must have the amount in the wallet too
+        // User must have the equivalent amount in the wallet
         require(
             balanceOf(msg.sender) >= requestedRepayAmount,
             "Repay: your balance is lesser than amount for repayment"
         );
 
-        uint256 debtBorrowedToBeRepaid = requestedRepayAmount;
+        uint256 amountBeingRepaid = requestedRepayAmount;
         // Check to see if the repayed amount is larger or equal than the actual debt
         // In this scenario, only deduct the DEBT owed, and send back the rest to the user
         if (requestedRepayAmount >= userVault.debtBorrowedAmount) {
-            debtBorrowedToBeRepaid = userVault.debtBorrowedAmount;
+            amountBeingRepaid = userVault.debtBorrowedAmount;
             // amountBalance = requestedRepayAmount.sub(userVault.debtBorrowedAmount);
             // Send back the SHELL balance that was left after paying the DEBT
             // _transfer(address(this), msg.sender, amountBalance);
@@ -256,11 +275,11 @@ contract ShellDebtManager is
         userVault.collateralCoverageRatio = newCollateralCoverageRatio;
         userVault.debtBorrowedAmount = SafeMath.sub(
             userVault.debtBorrowedAmount,
-            debtBorrowedToBeRepaid
+            amountBeingRepaid
         );
 
         // Destroy the SHELL paid back
-        _burn(msg.sender, debtBorrowedToBeRepaid);
+        _burn(msg.sender, amountBeingRepaid);
         emit UserRepayedDebt(userVault.ID, msg.sender, requestedRepayAmount);
     }
 
