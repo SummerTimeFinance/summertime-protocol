@@ -59,12 +59,24 @@ contract FarmingStrategy is Ownable, ReentrancyGuard {
         address _tokenBeingEarned,
         address farmingContract // Add PCS contract as the 1st contract
     ) internal {
+        require(
+            _summerTimeToken != address(0),
+            "_summerTimeToken cannot be nil or blackhole address"
+        );
+        
+        require(
+            _tokenBeingEarned != address(0),
+            "_tokenBeingEarned cannot be nil or blackhole address"
+        );
+        
+        require(
+            farmingContract != address(0),
+            "PCS farmingContract cannot be nil or blackhole address"
+        );
+        
         summerTimeToken = _summerTimeToken;
         tokenBeingEarned = _tokenBeingEarned;
-
-        if (farmingContract != address(0)) {
-            collateralFarmingContracts.push(farmingContract);
-        }
+        collateralFarmingContracts.push(farmingContract);
     }
 
     function addFarmingContract(address _farmingContract)
@@ -90,6 +102,7 @@ contract FarmingStrategy is Ownable, ReentrancyGuard {
             "collateral address can not be nil or blackhole address"
         );
         uint256 poolID = collateralPoolIDs[collateralAddress];
+        // Check to see if the poolID hadn't been set before
         if (poolID == 0) {
             collateralPoolIDs[collateralAddress] = collateralPoolID;
         }
