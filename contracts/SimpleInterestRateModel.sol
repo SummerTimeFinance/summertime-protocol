@@ -20,7 +20,7 @@ contract SimpleInterestRateModel is Ownable, InterestRateModel {
         uint256 totalCollateralValue,
         uint256 totalDebtBorrowed,
         uint256 reserves
-    ) external view returns (uint256) {
+    ) external override returns (uint256) {
         return SafeMath.add(platformInterestRate, baseInterestRate);
     }
 
@@ -29,7 +29,7 @@ contract SimpleInterestRateModel is Ownable, InterestRateModel {
         uint256 totalDebtBorrowed,
         uint256 reserves,
         uint256 reserveFactorMantissa
-    ) external view returns (uint256) {
+    ) external override returns (uint256) {
         return SafeMath.add(0, baseInterestRate);
     }
 }
