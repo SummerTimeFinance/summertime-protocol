@@ -32,8 +32,8 @@ contract SummerTimeToken is ERC20, ERC20Capped, ERC20Permit, Ownable {
         ERC20Capped(500 * oneMillion * 10**decimals())
     {
         decimalsPlaces18 = 10**decimals();
-
-        // Maximum token cap is 500M
+        
+        // The complete breakdown of how the SUMMMER token will be distributed;
         Tokenomics[Allocations.MAXIMUM_SUPPLY] = 500 * oneMillion;
         Tokenomics[Allocations.FARMING_REWARDS] = 150 * oneMillion;
         Tokenomics[Allocations.COMMUNITY_RESERVES] = 150 * oneMillion;

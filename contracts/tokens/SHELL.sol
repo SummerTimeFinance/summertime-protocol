@@ -23,16 +23,9 @@ contract ShellStableCoin is ERC20, ERC20Burnable, ERC20Permit, Ownable {
         // _mint(msg.sender, 0); // nothing to send to the user
     }
 
-    function _beforeTokenTransfer(
-        address from,
-        address recipient,
-        uint256 amount
-    ) internal virtual override(ERC20) {
-        super._beforeTokenTransfer(from, recipient, amount);
-        require(
-            recipient != address(this),
-            "beforeTransfer: invalid recipient"
-        );
+    // @dev Returns the cap on the token's total supply.
+    function cap() public view virtual returns (uint256) {
+        return _cap;
     }
 
     function _mint(address account, uint256 amount)
@@ -47,13 +40,20 @@ contract ShellStableCoin is ERC20, ERC20Burnable, ERC20Permit, Ownable {
         super._mint(account, amount);
     }
 
-    // @dev Returns the cap on the token's total supply.
-    function cap() public view virtual returns (uint256) {
-        return _cap;
-    }
-
     function _updateCap(uint256 newCap_) external onlyOwner {
         require(newCap_ > 0, "ERC20Capped: new cap is 0");
         _cap = newCap_;
+    }
+
+    function _beforeTokenTransfer(
+        address from,
+        address recipient,
+        uint256 amount
+    ) internal virtual override(ERC20) {
+        super._beforeTokenTransfer(from, recipient, amount);
+        require(
+            recipient != address(this),
+            "beforeTransfer: invalid recipient"
+        );
     }
 }
