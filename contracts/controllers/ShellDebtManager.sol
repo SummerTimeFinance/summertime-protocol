@@ -4,7 +4,7 @@ pragma solidity ^0.6.6;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-import "../config/CoreConfig.sol";
+import "../config/SummerTimeCoreConfig.sol";
 import "../tokens/SHELL.sol";
 import "../interfaces/InterestRateModel.sol";
 import "../interfaces/FarmingStrategy.sol";
@@ -18,7 +18,7 @@ contract ShellDebtManager is
     SummerTimeVault,
     ShellStableCoin
 {
-    /// @notice the interest rate model contract used to depict the interest rate
+    /// @dev the interest rate model contract used to depict the interest rate
     InterestRateModel internal platformInterestRateModel;
     FarmingStrategy internal farmingStrategy;
 
@@ -52,7 +52,7 @@ contract ShellDebtManager is
         onlyVaultOwner(msg.sender)
         nonReentrant
     {
-        UserVaultInfo storage userVault = userVaults[msg.sender];
+        UserVaultInfo storage userVault = platformUserVaults[msg.sender];
         // Update the vault's fair LP price
         this.fetchCollateralPrice(collateralAddress);
 
@@ -82,14 +82,14 @@ contract ShellDebtManager is
         // @TIP: Assignments between storage and memory
         // (or from calldata) always create an independent copy.
         uint256 previousTotalCollateralValue = userVault.totalCollateralValue;
-        // Update user's collateral total value to the current value according to current market prices
-        // IF the user has any DEBT, calculate & add to the DEBT the new accrued interest amount
-        updateUserCollateralCoverageRatio(userVault);
-
         platformTotalCollateralValue = SafeMath.sub(
             platformTotalCollateralValue,
             previousTotalCollateralValue
         );
+
+        // Update user's collateral total value to the current value according to current market prices
+        // IF the user has any DEBT, calculate & add to the DEBT the new accrued interest amount
+        updateUserCollateralCoverageRatio(userVault);
 
         platformTotalCollateralValue = SafeMath.add(
             platformTotalCollateralValue,
@@ -121,7 +121,7 @@ contract ShellDebtManager is
         onlyVaultOwner(msg.sender)
         nonReentrant
     {
-        UserVaultInfo storage userVault = userVaults[msg.sender];
+        UserVaultInfo storage userVault = platformUserVaults[msg.sender];
         uint256 currentCollateralBalance = userVault.collateralAmount[
             collateralAddress
         ];
@@ -179,7 +179,7 @@ contract ShellDebtManager is
         onlyVaultOwner(msg.sender)
         nonReentrant
     {
-        UserVaultInfo storage userVault = userVaults[msg.sender];
+        UserVaultInfo storage userVault = platformUserVaults[msg.sender];
         // Update user's collateral total value to the current value according to current market prices
         // IF the user has any DEBT, calculate & add to the DEBT the new accrued interest amount
         updateUserCollateralCoverageRatio(userVault);
@@ -187,7 +187,7 @@ contract ShellDebtManager is
         // User must deposit an amount larger than 0
         require(
             requestedBorrowAmount > 0,
-            "Borrow: Must borrow more an amount above 0"
+            "Borrow: Must borrow an amount above 0"
         );
 
         // Is borrrowing disabled globally
@@ -235,7 +235,7 @@ contract ShellDebtManager is
         onlyVaultOwner(msg.sender)
         nonReentrant
     {
-        UserVaultInfo storage userVault = userVaults[msg.sender];
+        UserVaultInfo storage userVault = platformUserVaults[msg.sender];
         // Update user's collateral value to the current value according to current market prices
         // IF the user has any DEBT, calculate & add to the DEBT the new accrued interest amount
         updateUserCollateralCoverageRatio(userVault);
@@ -243,7 +243,7 @@ contract ShellDebtManager is
         // User must deposit an amount larger than 0
         require(
             requestedRepayAmount > 0,
-            "Repay: Must borrow more an amount above 0"
+            "Repay: Must borrow an amount above 0"
         );
 
         // User must have the equivalent amount in the wallet
@@ -277,27 +277,43 @@ contract ShellDebtManager is
             userVault.debtBorrowedAmount,
             amountBeingRepaid
         );
+        // Get the reserve amount, and send it to the treasury address
+        uint256 amountToSendToReserves = SafeMath.mul(
+            amountBeingRepaid,
+            reserveFactor.div(100e18)
+        );
+        platformTotalReserves = SafeMath.add(
+            platformTotalReserves,
+            amountToSendToReserves
+        );
+        // Send reserve amount deducted to the reserves
+        _transfer(msg.sender, treasuryAdminAddress, amountToSendToReserves);
 
+        // Burn the rest
+        uint256 amountRepaidBeingBurned = SafeMath.sub(
+            amountBeingRepaid,
+            amountToSendToReserves
+        );
         // Destroy the SHELL paid back
-        _burn(msg.sender, amountBeingRepaid);
-        emit UserRepayedDebt(userVault.ID, msg.sender, requestedRepayAmount);
+        _burn(msg.sender, amountRepaidBeingBurned);
+        emit UserRepayedDebt(userVault.ID, msg.sender, amountBeingRepaid);
     }
 
     // A user's collateral coverage ratio should be above or equal to 0.95
     // If below the user is susceptible to being partially liquidated
     function buyRiskyUserVault(address userVaultAddress) external nonReentrant {
-        require(
-            platformStabilityPool == address(0) ||
-                msg.sender == platformStabilityPool,
-            "buyRiskyVault: disabled for public"
-        );
+        // Check to see if the platformStabilityPool is not provided yet
+        // And ensure the liquidator is the platformStabilityPool address
+        if (platformStabilityPool != address(0) && msg.sender == platformStabilityPool) {
+            revert("buyRiskyVault: disabled for the community");
+        }
 
-        UserVaultInfo storage liquidatorVault = userVaults[msg.sender];
+        UserVaultInfo storage liquidatorVault = platformUserVaults[msg.sender];
         if (liquidatorVault.ID == 0) {
             revert("buyRiskyUserVault: liquidator vault doesn't exist");
         }
 
-        UserVaultInfo storage riskyUserVault = userVaults[userVaultAddress];
+        UserVaultInfo storage riskyUserVault = platformUserVaults[userVaultAddress];
         // Check if the vault exists
         if (riskyUserVault.ID == 0) {
             revert("buyRiskyUserVault: user vault doesn't exist");
@@ -341,7 +357,7 @@ contract ShellDebtManager is
             riskyUserVault
         );
 
-        UserVaultInfo storage treasuryVault = userVaults[treasuryAdminAddress];
+        UserVaultInfo storage treasuryVault = platformUserVaults[treasuryAdminAddress];
         // Then migrate the chunk of collateral taken to the liquidator's vault
         for (uint256 index = 0; index < collateralChunks.length; index++) {
             address collateralAddress = vaultCollateralAddresses[index];
@@ -357,7 +373,7 @@ contract ShellDebtManager is
             );
 
             // TODO: Make sure to bootstrap treasury vault in constructor
-            // M<ove 0.5% collateral chunks to our treasury vault, if it's set up
+            // Move 0.5% collateral chunks to our treasury vault
             if (treasuryVault.ID != 0) {
                 // revert("buyRiskyUserVault: treasury vault doesn't exist");
                 treasuryVault.collateralAmount[collateralAddress] = SafeMath
@@ -388,12 +404,12 @@ contract ShellDebtManager is
         nonReentrant
         returns (uint256)
     {
-        UserVaultInfo storage previousUserVault = userVaults[msg.sender];
+        UserVaultInfo storage previousUserVault = platformUserVaults[msg.sender];
         // Update user's collateral value to the current value according to current market prices
         // IF the user has any DEBT, calculate & add to the DEBT the new accrued interest amount
         updateUserCollateralCoverageRatio(previousUserVault);
 
-        UserVaultInfo storage nextUserVault = userVaults[newVaultOwnerAddress];
+        UserVaultInfo storage nextUserVault = platformUserVaults[newVaultOwnerAddress];
         // Check to see if the new owner already has a vault
         if (nextUserVault.ID > 0) {
             revert("Transfer: user already has a vault");
@@ -401,7 +417,7 @@ contract ShellDebtManager is
 
         // If the new user doesn't have a vault, create one and do the trenasfer;
         this.createUserVault(newVaultOwnerAddress);
-        nextUserVault = userVaults[newVaultOwnerAddress];
+        nextUserVault = platformUserVaults[newVaultOwnerAddress];
 
         // Save the IDs into the memory, so that they are set back to what they were
         uint256 nextVaultOwnerID = nextUserVault.ID;
@@ -430,7 +446,7 @@ contract ShellDebtManager is
         userVault.totalCollateralValue = 0;
 
         // @info LOOP thru each available collateral getting the user's collateral amount
-        // Use that amount to calculate thier current total collateral value
+        // Use that amount to calculate their current total collateral value
         // according to the new price for each LP collateral
         for (
             uint256 index = 0;
@@ -469,14 +485,15 @@ contract ShellDebtManager is
         uint256 interestToBeApplied = timeDifference.mul(
             perSecondInterestRate(
                 platformInterestRateModel.getBorrowRate(
-                    totalCollateralValue,
+                    platformTotalCollateralValue,
                     totalDebtBorrowed,
-                    reserves
+                    platformTotalReserves
                 )
             )
         );
-        uint256 accruedInterest = interestToBeApplied.mul(
-            userVault.debtBorrowedAmount
+        uint256 accruedInterest = SafeMath.mul(
+            userVault.debtBorrowedAmount,
+            interestToBeApplied
         );
 
         // Update user's current DEBT amount

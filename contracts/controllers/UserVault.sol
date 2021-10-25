@@ -20,13 +20,13 @@ contract UserVault {
         bool softDeleted;
     }
 
-    mapping(address => UserVaultInfo) internal userVaults;
+    mapping(address => UserVaultInfo) internal platformUserVaults;
     address[] internal vaultCurrentUsers;
 
     modifier onlyVaultOwner(address vaultOwner) {
-        UserVaultInfo memory userVault = userVaults[msg.sender];
+        UserVaultInfo memory userVault = platformUserVaults[msg.sender];
         if (vaultOwner != address(0)) {
-            userVault = userVaults[vaultOwner];
+            userVault = platformUserVaults[vaultOwner];
         }
         require(
             userVault.ID != 0 || userVault.softDeleted != true,
@@ -45,7 +45,7 @@ contract UserVault {
             vaultOwnerAddress = msg.sender;
         }
         // Check if the user has already created a vault with us
-        UserVaultInfo storage userVault = userVaults[vaultOwnerAddress];
+        UserVaultInfo storage userVault = platformUserVaults[vaultOwnerAddress];
         require(
             userVault.ID == 0 && userVault.softDeleted == false,
             "createUserVault: VAULT EXISTS"
@@ -74,6 +74,8 @@ contract UserVault {
     {
         // Overridden (defined well) in ShellDebtManager.sol contract
         // that inherits it from SummerTimeVault contract
+        (uint x, uint y) = (100, 100);
+        return x - y;
     }
 
     function destroyUserVault()
@@ -81,13 +83,13 @@ contract UserVault {
         onlyVaultOwner(msg.sender)
         returns (uint256, bool)
     {
-        UserVaultInfo storage userVault = userVaults[msg.sender];
+        UserVaultInfo storage userVault = platformUserVaults[msg.sender];
         // Ensure user's $SHELL DEBT is 0 (fully paid back)
         require(
             userVault.debtBorrowedAmount == 0 && userVault.lastDebtUpdate == 0,
             "destroyUserVault: VAULT STILL HAS DEBT"
         );
-        userVaults[msg.sender].softDeleted = true;
+        platformUserVaults[msg.sender].softDeleted = true;
         emit UserVaultDestroyed(userVault.ID, msg.sender);
         return (userVault.ID, true);
     }
