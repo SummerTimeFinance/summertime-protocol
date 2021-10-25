@@ -16,7 +16,7 @@ import "../interfaces/FairLPPriceOracle.sol";
 
 // The following collateral addresses will be supported (progressively):
 // BTCB-ETH (old is gold, proven) [127M]
-// BTCB-BUSD [118M]
+// BTCB-BUSD [118M] 
 // ETH-BNB [139M]
 // BTCB-BNB [118M]
 // BUSD-BNB [460M]
@@ -79,6 +79,7 @@ contract SummerTimeVault is Ownable, GeneralVaultConfig, CollateralVaultConfig, 
         address token1PriceOracle,
         address uniswapV2FactoryAddress,
         uint256 farmingContractIndex,
+        uint256 discountApplied,
         // address farmContractAddress, // this is only used in the strategy contract
         address strategyAddress
     ) external onlyOwner returns (address) {
@@ -146,6 +147,8 @@ contract SummerTimeVault is Ownable, GeneralVaultConfig, CollateralVaultConfig, 
         newCollateralVault.uniswapFactoryAddress = tokenPairsForLP.factory();
         // newCollateralVault.farmContractAddress = uniswapFactoryAddress;
         newCollateralVault.strategyAddress = strategyAddress;
+        // @dev may use this in v2.0, may complicate a lot of things in this iteration
+        newCollateralVault.discountApplied = 5e17;
         newCollateralVault.maxCollateralAmountAccepted = SafeMath.mul(
             uint256(1000),
             uint256(10**18)
@@ -154,7 +157,11 @@ contract SummerTimeVault is Ownable, GeneralVaultConfig, CollateralVaultConfig, 
         newCollateralVault.borrowingPaused = false;
         newCollateralVault.disabled = false;
 
-        // By default, 0 references PCS, so it doesn't have to be set
+        if (discountApplied > 1e16) {
+            newCollateralVault.discountApplied = discountApplied;
+        }
+
+        // @dev the default value 0 references PCS, so it doesn't have to be set
         if (farmingContractIndex != 0) {
             newCollateralVault.index = farmingContractIndex;
         }
@@ -176,16 +183,27 @@ contract SummerTimeVault is Ownable, GeneralVaultConfig, CollateralVaultConfig, 
         return true;
     }
 
-    function updateFarmContractAddress(
+    function updateVaultFarmIndexAndPoolId(
         address collateralAddress,
-        address farmContractAddress
+        uint256 newFarmIndex,
+        uint256 newFarmPoolID
     ) external onlyOwner collateralAccepted(collateralAddress) returns (bool) {
         VaultConfig storage vault = vaultAvailable[collateralAddress];
+        require(
+            vault.index != newFarmIndex,
+            "newFarmIndex provided is similar with current index in storage"
+        );
+        require(
+            vault.farmPoolID != newFarmPoolID,
+            "newFarmPoolID provided is similar with current farmPoolID in storage"
+        );
+
         // TODO:
         // unstake those tokens, compound the harvested rewards
-        // then restake/migrate them to the new farmContractAddress
-        vault.farmContractAddress = farmContractAddress;
-        emit VaultFarmContractAddressUpdated(farmContractAddress);
+        // then restake/migrate them to the new index
+        uint256 previousFarmIndex = vault.index;
+        vault.index = newFarmIndex;
+        emit VaultFarmIndexAndPoolIDUpdated(previousFarmIndex, newFarmIndex, newFarmPoolID);
         return true;
     }
 
@@ -310,7 +328,7 @@ contract SummerTimeVault is Ownable, GeneralVaultConfig, CollateralVaultConfig, 
         address token1
     );
     event CollateralVaultState(address collateralAddress, bool isDisabled);
-    event VaultFarmContractAddressUpdated(address farmContractAddress);
+    event VaultFarmIndexAndPoolIDUpdated(uint256 previousFarmIndex, uint256 newFarmIndex, uint256 newFarmPoolID);
     event VaultPriceOracle0AddressUpdated(address newPriceOracle0Address);
     event VaultPriceOracle1AddressUpdated(address newPriceOracle1Address);
     event VaultDebtCeilingUpdated(uint256 newDebtCeiling);

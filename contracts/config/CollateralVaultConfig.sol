@@ -23,7 +23,7 @@ contract CollateralVaultConfig is Ownable {
         // By default, it's 0, which should reference PCS
         uint256 index;
         // The MasterChef pool ID of this LP collateral
-        address farmPoolID;
+        uint256 farmPoolID;
         // The strategy address for this vault used by SummerTime for compounding
         address strategyAddress;
         // the current fair LP price
@@ -32,8 +32,12 @@ contract CollateralVaultConfig is Ownable {
         address token0PriceOracle;
         // The price oracle to get the PRICE of the token1
         address token1PriceOracle;
-        // Initially value will be set to $1000, if 0, it's unlimited
+        // Initially , it's 0, so unlimited, should be set to $1000 while testing
         uint256 maxCollateralAmountAccepted;
+        // By default it will be 50% (5e17), 
+        // but should be adjustable depending on the collateral provided
+        // For example, USDT-BUSD should have a lower discount such as 10%
+        uint256 discountApplied;
         // For pausing depositing or borrowing, incase there is a need to do so
         bool depositingPaused;
         bool borrowingPaused;
