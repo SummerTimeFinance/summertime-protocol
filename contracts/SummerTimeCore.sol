@@ -4,7 +4,17 @@ pragma solidity ^0.6.6;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./controllers/ShellDebtManager.sol";
 
-abstract contract SummerTimeCore is Ownable, ShellDebtManager {
+contract SummerTimeCore is Ownable, ShellDebtManager {
+
+    constructor(
+        address fairLPPriceOracle,
+        address interestRateModel,
+        address farmingStrategyAddress
+    )
+        internal
+        ShellDebtManager(fairLPPriceOracle, interestRateModel, farmingStrategyAddress)
+    {}
+
     function updatePlatformStabilityPoolAddress(address newPlatformStabilityPool)
         external
         onlyOwner

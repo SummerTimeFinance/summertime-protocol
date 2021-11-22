@@ -16,7 +16,7 @@ import "../interfaces/FairLPPriceOracle.sol";
 
 // The following collateral addresses will be supported (progressively):
 // BTCB-ETH (old is gold, proven) [127M]
-// BTCB-BUSD [118M] 
+// BTCB-BUSD [118M]
 // ETH-BNB [139M]
 // BTCB-BNB [118M]
 // BUSD-BNB [460M]
@@ -71,7 +71,7 @@ contract SummerTimeVault is Ownable, GeneralVaultConfig, CollateralVaultConfig, 
     }
 
     function createNewCollateralVault(
-        string memory displayName,
+        string calldata displayName,
         address token0Address,
         address token1Address,
         address token0PriceOracle,
@@ -173,7 +173,7 @@ contract SummerTimeVault is Ownable, GeneralVaultConfig, CollateralVaultConfig, 
 
     function updateCollateralName(
         address collateralAddress,
-        string memory newDisplayName
+        string calldata newDisplayName
     ) external onlyOwner collateralAccepted(collateralAddress) returns (bool) {
         if (bytes(newDisplayName).length == 0) {
             revert("CollateralName: invalid collateral name");
