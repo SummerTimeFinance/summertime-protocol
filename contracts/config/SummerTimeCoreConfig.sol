@@ -7,7 +7,8 @@ contract SummerTimeCoreConfig is DefaultConfig {
     // Note: The treasury admin will be set as the deployer address
     address public treasuryAdminAddress;
 
-    // The platform's stability pool address
+    // The platform's stability pool address, used for liquidations
+    // @reference: https://docs.liquity.org/faq/stability-pool-and-liquidations
     address public platformStabilityPool;
 
     // Initial protocol-WIDE DEBT ceiling is: $100,000
@@ -23,7 +24,8 @@ contract SummerTimeCoreConfig is DefaultConfig {
     // @TODO: When debt is repaid, send the the 0.10% of the interest rate accrued to the reserves
     uint256 public platformTotalReserves = 0;
 
-    // The portion of accrued interest that goes into reserves, initial set to: 0.10%
+    // The portion of accrued interest that goes into reserves
+    // initially default percentage: 0.10%
     uint256 public reserveFactor = 1e17;
 
     // The base can be used to calculate a new CCR for a new vault,
@@ -32,14 +34,14 @@ contract SummerTimeCoreConfig is DefaultConfig {
 
     // Targeted CCR of a vault (1.2), once liquidation is triggered
     uint256 public targetedCollateralCoverageRatio = 12e17;
-    
+
     // discount applied the user's collateral: 50% (0.5)
     uint256 public discountApplied = 5e17;
 
     // The threshold at which a borrow position will be considered
     // undercollateralized and subjected to liquidation for each collateral: 0.95
     uint256 public liquidationThreshold = 95e17;
-    
+
     // On liquidation, 4/9 of a vault's collateral is taken
     uint256 public liquidationFraction = 44444e13;
 

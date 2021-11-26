@@ -17,7 +17,7 @@ contract PriceOracle is Ownable {
         uint80 roundID;
         uint256 price;
         uint256 startedAt;
-        uint256 timestamp;
+        uint256 timeStamp;
         uint80 answeredInRound;
     }
 
@@ -32,7 +32,7 @@ contract PriceOracle is Ownable {
     // @dev: Returns the last stored price
     function getLastTokenPrice(address _token) external view returns (uint256) {
         PriceInfo storage tokenPriceInfo = tokenPriceFeed[_token];
-        require(tokenPriceInfo.price > 0, "PRICE: token price can not be 0");
+        require(tokenPriceInfo.price > 0, "getLastTokenPrice: token price can not be 0");
         return tokenPriceInfo.price;
     }
 
@@ -43,7 +43,7 @@ contract PriceOracle is Ownable {
             uint80 roundID,
             int256 price,
             uint256 startedAt,
-            uint256 timestamp,
+            uint256 timeStamp,
             uint80 answeredInRound
         ) = tokenPriceInfo.latestRoundData();
         uint256 priceToUint = SafeCast.toUint256(price);
@@ -61,13 +61,13 @@ contract PriceOracle is Ownable {
             roundID,
             priceToUint,
             startedAt,
-            timestamp,
+            timeStamp,
             answeredInRound
         );
         return priceToUint;
     }
 
-    // @note the owner should be updated to be the ShellDebtManagement contract
+    // @TODO: the owner should be updated to be the ShellDebtManagement contract
     // Or have both the contract & deployer address as owners
     function createOrUpdateTokenPriceOracle(address _token, address _oracle)
         external
