@@ -6,7 +6,12 @@ interface FairLPPriceOracle {
 
     function getCurrentTokenPrice(address _token) external returns (uint256);
 
-    function getLastLPTokenPrice(address pairAddress)
+    function getLastKnownFairLPTokenPrice(address _pairAddress)
+        external
+        view
+        returns (uint256);
+
+    function getCurrentFairLPTokenPrice(address pairAddress)
         external
         returns (uint256);
 }

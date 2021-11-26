@@ -15,9 +15,23 @@ contract FairLPPriceOracle is Ownable, PriceOracle {
     // using SafeMath for uint256;
     // using MathUtils for uint256;
 
+    // LP token address => last stored fair LP token price
+    mapping(address => uint256) public currentFairLPTokenPrice;
+
+    // @dev: Returns the last stored price
+    function getLastKnownFairLPTokenPrice(address _pairAddress)
+        external
+        view
+        returns (uint256)
+    {
+        uint256 lastLPTokenPrice = currentFairLPTokenPrice[_pairAddress];
+        require(lastLPTokenPrice > 0, "getLastTokenPrice: token price can not be 0");
+        return lastLPTokenPrice;
+    }
+
     // @dev Return the value of the given input as ETH per unit
     // @param address The Uniswap token pair to check the value.
-    function getLastLPTokenPrice(address pairAddress)
+    function getCurrentFairLPTokenPrice(address pairAddress)
         external
         returns (uint256)
     {
@@ -36,10 +50,11 @@ contract FairLPPriceOracle is Ownable, PriceOracle {
         uint256 tokenPrice1 = this.getCurrentTokenPrice(token1);
         uint256 sqrtP = MathUtils.sqrt(SafeMath.mul(tokenPrice0, tokenPrice1));
 
-        return
-            MathUtils.div(
-                SafeMath.mul(2, SafeMath.mul(sqrtR, sqrtP)),
-                totalSupply
-            );
+        uint256 latestFairLPTokenPrice = MathUtils.div(
+            SafeMath.mul(2, SafeMath.mul(sqrtR, sqrtP)),
+            totalSupply
+        );
+        currentFairLPTokenPrice[pairAddress] = latestFairLPTokenPrice;
+        return latestFairLPTokenPrice;
     }
 }
