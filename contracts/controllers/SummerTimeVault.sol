@@ -141,7 +141,7 @@ contract SummerTimeVault is Ownable, GeneralVaultConfig, CollateralVaultConfig, 
         newCollateralVault.token1 = token1;
         newCollateralVault.token0PriceOracle = token0PriceOracle;
         newCollateralVault.token1PriceOracle = token1PriceOracle;
-        newCollateralVault.fairPrice = fairLPPriceSource.getLastLPTokenPrice(
+        newCollateralVault.fairPrice = fairLPPriceSource.getCurrentFairLPTokenPrice(
             addressForLPPair
         );
         newCollateralVault.uniswapFactoryAddress = tokenPairsForLP.factory();
@@ -315,7 +315,7 @@ contract SummerTimeVault is Ownable, GeneralVaultConfig, CollateralVaultConfig, 
     {
         VaultConfig storage vault = vaultAvailable[collateralAddress];
         // Update the current price of the LP collateral (price oracle check)
-        uint256 fairLPPrice = fairLPPriceSource.getLastLPTokenPrice(
+        uint256 fairLPPrice = fairLPPriceSource.getCurrentFairLPTokenPrice(
             collateralAddress
         );
         vault.fairPrice = fairLPPrice;
