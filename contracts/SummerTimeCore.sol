@@ -15,6 +15,19 @@ contract SummerTimeCore is Ownable, ShellDebtManager {
         ShellDebtManager(fairLPPriceOracle, interestRateModel, farmingStrategyAddress)
     {}
 
+    function updateProtocolDebtCeiling(uint256 newDebtCeilingAmount)
+        external
+        onlyOwner
+        returns (bool)
+    {
+        require(
+            newDebtCeilingAmount > 0,
+            "newDebtCeilingAmount must be an amount larger than 0"
+        );
+        summerTimeDebtCeiling = newDebtCeilingAmount;
+        return true;
+    }
+
     function updatePlatformStabilityPoolAddress(address newPlatformStabilityPool)
         external
         onlyOwner
@@ -79,5 +92,23 @@ contract SummerTimeCore is Ownable, ShellDebtManager {
         );
         debtBorrowingFee = newDebtBorrowingFee;
         return true;
+    }
+
+    function pauseCollateralDepositing()
+        external
+        onlyOwner
+        returns (bool)
+    {
+        protocolDepositingPaused = !protocolDepositingPaused;
+        return protocolDepositingPaused;
+    }
+
+    function pauseStablecoinBorrowing()
+        external
+        onlyOwner
+        returns (bool)
+    {
+        protocolBorrowingPaused = !protocolBorrowingPaused;
+        return protocolBorrowingPaused;
     }
 }
