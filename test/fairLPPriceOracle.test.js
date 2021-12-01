@@ -3,13 +3,11 @@ const { ethers } = require("hardhat");
 
 describe("SummerTimeDAO", () => {
 
-  let fairLPPriceOracle;
-
   it("Should deploy FairLPPriceOracle contract", async () =>  {
     const FairLPPriceOracleInstance = await ethers.getContractFactory(
       'contracts/FairLPPriceOracle.sol:FairLPPriceOracle'
     );
-    fairLPPriceOracle = await FairLPPriceOracleInstance.deploy();
+    const fairLPPriceOracle = await FairLPPriceOracleInstance.deploy();
     await fairLPPriceOracle.deployed();
 
     // NOTE: You 1st have to add the associated token & their price oracle addresses
@@ -42,12 +40,5 @@ describe("SummerTimeDAO", () => {
     expect(CakeBNBLPPrice).to.be.an('object');
   })
   .timeout(50000);
-
-  // it("Should get the fair LP price for CAKE-BNB", async () => {
-  //   const CakeBNBLPPrice = await fairLPPriceOracle.getCurrentFairLPTokenPrice(
-  //     '0x0eD7e52944161450477ee417DE9Cd3a859b14fD0'
-  //   );
-  //   expect(CakeBNBLPPrice).to.be.a('number');
-  // });
 
 });

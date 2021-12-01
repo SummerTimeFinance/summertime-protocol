@@ -15,19 +15,6 @@ contract SummerTimeCore is Ownable, ShellDebtManager {
         ShellDebtManager(fairLPPriceOracle, interestRateModel, farmingStrategyAddress)
     {}
 
-    function updateProtocolDebtCeiling(uint256 newDebtCeilingAmount)
-        external
-        onlyOwner
-        returns (bool)
-    {
-        require(
-            newDebtCeilingAmount > 0,
-            "newDebtCeilingAmount must be an amount larger than 0"
-        );
-        summerTimeDebtCeiling = newDebtCeilingAmount;
-        return true;
-    }
-
     function updatePlatformStabilityPoolAddress(address newPlatformStabilityPool)
         external
         onlyOwner
@@ -38,6 +25,19 @@ contract SummerTimeCore is Ownable, ShellDebtManager {
             "must not be nil or blackhole address"
         );
         platformStabilityPool = newPlatformStabilityPool;
+        return true;
+    }
+
+    function updateProtocolDebtCeiling(uint256 newDebtCeilingAmount)
+        external
+        onlyOwner
+        returns (bool)
+    {
+        require(
+            newDebtCeilingAmount > 0,
+            "newDebtCeilingAmount must be an amount larger than 0"
+        );
+        summerTimeDebtCeiling = newDebtCeilingAmount;
         return true;
     }
 
