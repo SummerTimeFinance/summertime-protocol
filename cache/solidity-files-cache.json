@@ -1,0 +1,1519 @@
+{
+  "_format": "hh-sol-cache-2",
+  "files": {
+    "/Users/0xnumbuhfive/Documents/summertime-protocol/contracts/config/CollateralVaultConfig.sol": {
+      "lastModificationDate": 1635854322416,
+      "contentHash": "1393b7bb33ce26d91bad0fc9eed3e692",
+      "sourceName": "contracts/config/CollateralVaultConfig.sol",
+      "solcConfig": {
+        "version": "0.6.6",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/access/Ownable.sol"
+      ],
+      "versionPragmas": [
+        "^0.6.6"
+      ],
+      "artifacts": [
+        "CollateralVaultConfig"
+      ]
+    },
+    "/Users/0xnumbuhfive/Documents/summertime-protocol/node_modules/@openzeppelin/contracts/access/Ownable.sol": {
+      "lastModificationDate": 1635856057954,
+      "contentHash": "6748815a5b45c4aeeda56819f41190e0",
+      "sourceName": "@openzeppelin/contracts/access/Ownable.sol",
+      "solcConfig": {
+        "version": "0.6.6",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../utils/Context.sol"
+      ],
+      "versionPragmas": [
+        ">=0.6.0 <0.8.0"
+      ],
+      "artifacts": [
+        "Ownable"
+      ]
+    },
+    "/Users/0xnumbuhfive/Documents/summertime-protocol/node_modules/@openzeppelin/contracts/utils/Context.sol": {
+      "lastModificationDate": 1635856057938,
+      "contentHash": "2adbd82f6d055a4751566d4671512b03",
+      "sourceName": "@openzeppelin/contracts/utils/Context.sol",
+      "solcConfig": {
+        "version": "0.6.6",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.6.0 <0.8.0"
+      ],
+      "artifacts": [
+        "Context"
+      ]
+    },
+    "/Users/0xnumbuhfive/Documents/summertime-protocol/contracts/controllers/SummerTimeVault.sol": {
+      "lastModificationDate": 1638788084329,
+      "contentHash": "e28f6ee0962982cd63fe6ef3b78eb86d",
+      "sourceName": "contracts/controllers/SummerTimeVault.sol",
+      "solcConfig": {
+        "version": "0.6.6",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/access/Ownable.sol",
+        "@openzeppelin/contracts/math/SafeMath.sol",
+        "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol",
+        "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol",
+        "../config/GeneralVaultConfig.sol",
+        "../config/CollateralVaultConfig.sol",
+        "../controllers/UserVault.sol",
+        "../interfaces/FairLPPriceOracle.sol"
+      ],
+      "versionPragmas": [
+        "^0.6.6"
+      ],
+      "artifacts": [
+        "SummerTimeVault"
+      ]
+    },
+    "/Users/0xnumbuhfive/Documents/summertime-protocol/node_modules/@openzeppelin/contracts/math/SafeMath.sol": {
+      "lastModificationDate": 1635856057958,
+      "contentHash": "e03e12206057e809eb76c5f681170c32",
+      "sourceName": "@openzeppelin/contracts/math/SafeMath.sol",
+      "solcConfig": {
+        "version": "0.6.6",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.6.0 <0.8.0"
+      ],
+      "artifacts": [
+        "SafeMath"
+      ]
+    },
+    "/Users/0xnumbuhfive/Documents/summertime-protocol/node_modules/@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol": {
+      "lastModificationDate": 1635854363066,
+      "contentHash": "ec39b5372f4f4d52101b4da561e2aee6",
+      "sourceName": "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol",
+      "solcConfig": {
+        "version": "0.6.6",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.5.0"
+      ],
+      "artifacts": [
+        "IUniswapV2Factory"
+      ]
+    },
+    "/Users/0xnumbuhfive/Documents/summertime-protocol/node_modules/@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol": {
+      "lastModificationDate": 1635854363066,
+      "contentHash": "3fa31c3860f2b9585c3a98c64850829e",
+      "sourceName": "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol",
+      "solcConfig": {
+        "version": "0.6.6",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.5.0"
+      ],
+      "artifacts": [
+        "IUniswapV2Pair"
+      ]
+    },
+    "/Users/0xnumbuhfive/Documents/summertime-protocol/contracts/config/GeneralVaultConfig.sol": {
+      "lastModificationDate": 1635854322416,
+      "contentHash": "728ab4f5a2a4d295b80b130381a2a57e",
+      "sourceName": "contracts/config/GeneralVaultConfig.sol",
+      "solcConfig": {
+        "version": "0.6.6",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/access/Ownable.sol"
+      ],
+      "versionPragmas": [
+        "^0.6.6"
+      ],
+      "artifacts": [
+        "GeneralVaultConfig"
+      ]
+    },
+    "/Users/0xnumbuhfive/Documents/summertime-protocol/contracts/controllers/UserVault.sol": {
+      "lastModificationDate": 1635854322417,
+      "contentHash": "8d3b28fead00d9a2930b42bd83ddf5b7",
+      "sourceName": "contracts/controllers/UserVault.sol",
+      "solcConfig": {
+        "version": "0.6.6",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.6.6"
+      ],
+      "artifacts": [
+        "UserVault"
+      ]
+    },
+    "/Users/0xnumbuhfive/Documents/summertime-protocol/contracts/interfaces/FairLPPriceOracle.sol": {
+      "lastModificationDate": 1637929568249,
+      "contentHash": "331dc394acdddd2e440a88cb0d9c170f",
+      "sourceName": "contracts/interfaces/FairLPPriceOracle.sol",
+      "solcConfig": {
+        "version": "0.6.6",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.6.6"
+      ],
+      "artifacts": [
+        "FairLPPriceOracle"
+      ]
+    },
+    "/Users/0xnumbuhfive/Documents/summertime-protocol/contracts/tokens/SUMMER.sol": {
+      "lastModificationDate": 1635854322419,
+      "contentHash": "3bf2b3c718b09f21104dd8fab088b6e6",
+      "sourceName": "contracts/tokens/SUMMER.sol",
+      "solcConfig": {
+        "version": "0.6.6",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/token/ERC20/ERC20.sol",
+        "@openzeppelin/contracts/token/ERC20/ERC20Capped.sol",
+        "@openzeppelin/contracts/drafts/ERC20Permit.sol",
+        "@openzeppelin/contracts/access/Ownable.sol"
+      ],
+      "versionPragmas": [
+        "^0.6.6"
+      ],
+      "artifacts": [
+        "SummerTimeToken"
+      ]
+    },
+    "/Users/0xnumbuhfive/Documents/summertime-protocol/node_modules/@openzeppelin/contracts/token/ERC20/ERC20.sol": {
+      "lastModificationDate": 1635856057948,
+      "contentHash": "8065b340476f61365c076897199425f1",
+      "sourceName": "@openzeppelin/contracts/token/ERC20/ERC20.sol",
+      "solcConfig": {
+        "version": "0.6.6",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../../utils/Context.sol",
+        "./IERC20.sol",
+        "../../math/SafeMath.sol"
+      ],
+      "versionPragmas": [
+        ">=0.6.0 <0.8.0"
+      ],
+      "artifacts": [
+        "ERC20"
+      ]
+    },
+    "/Users/0xnumbuhfive/Documents/summertime-protocol/node_modules/@openzeppelin/contracts/token/ERC20/ERC20Capped.sol": {
+      "lastModificationDate": 1635856057948,
+      "contentHash": "c7b90bb47793b219e087d0906b6dc502",
+      "sourceName": "@openzeppelin/contracts/token/ERC20/ERC20Capped.sol",
+      "solcConfig": {
+        "version": "0.6.6",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./ERC20.sol"
+      ],
+      "versionPragmas": [
+        ">=0.6.0 <0.8.0"
+      ],
+      "artifacts": [
+        "ERC20Capped"
+      ]
+    },
+    "/Users/0xnumbuhfive/Documents/summertime-protocol/node_modules/@openzeppelin/contracts/drafts/ERC20Permit.sol": {
+      "lastModificationDate": 1635856057949,
+      "contentHash": "2fe7726fa4d3761f947524c4a1e3c90e",
+      "sourceName": "@openzeppelin/contracts/drafts/ERC20Permit.sol",
+      "solcConfig": {
+        "version": "0.6.6",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../token/ERC20/ERC20.sol",
+        "./IERC20Permit.sol",
+        "../cryptography/ECDSA.sol",
+        "../utils/Counters.sol",
+        "./EIP712.sol"
+      ],
+      "versionPragmas": [
+        ">=0.6.5 <0.8.0"
+      ],
+      "artifacts": [
+        "ERC20Permit"
+      ]
+    },
+    "/Users/0xnumbuhfive/Documents/summertime-protocol/node_modules/@openzeppelin/contracts/token/ERC20/IERC20.sol": {
+      "lastModificationDate": 1635856057952,
+      "contentHash": "e0a41531d159d3a32f84b7a3ecf9fabb",
+      "sourceName": "@openzeppelin/contracts/token/ERC20/IERC20.sol",
+      "solcConfig": {
+        "version": "0.6.6",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.6.0 <0.8.0"
+      ],
+      "artifacts": [
+        "IERC20"
+      ]
+    },
+    "/Users/0xnumbuhfive/Documents/summertime-protocol/node_modules/@openzeppelin/contracts/drafts/IERC20Permit.sol": {
+      "lastModificationDate": 1635856057952,
+      "contentHash": "554ef6825dd2112860a7f82be25dab45",
+      "sourceName": "@openzeppelin/contracts/drafts/IERC20Permit.sol",
+      "solcConfig": {
+        "version": "0.6.6",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.6.0 <0.8.0"
+      ],
+      "artifacts": [
+        "IERC20Permit"
+      ]
+    },
+    "/Users/0xnumbuhfive/Documents/summertime-protocol/node_modules/@openzeppelin/contracts/cryptography/ECDSA.sol": {
+      "lastModificationDate": 1635856057939,
+      "contentHash": "373a483bb0a88668c0735924d84f50f1",
+      "sourceName": "@openzeppelin/contracts/cryptography/ECDSA.sol",
+      "solcConfig": {
+        "version": "0.6.6",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.6.0 <0.8.0"
+      ],
+      "artifacts": [
+        "ECDSA"
+      ]
+    },
+    "/Users/0xnumbuhfive/Documents/summertime-protocol/node_modules/@openzeppelin/contracts/utils/Counters.sol": {
+      "lastModificationDate": 1635856057938,
+      "contentHash": "304a56eb1322144704fb39f8c7e6d722",
+      "sourceName": "@openzeppelin/contracts/utils/Counters.sol",
+      "solcConfig": {
+        "version": "0.6.6",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../math/SafeMath.sol"
+      ],
+      "versionPragmas": [
+        ">=0.6.0 <0.8.0"
+      ],
+      "artifacts": [
+        "Counters"
+      ]
+    },
+    "/Users/0xnumbuhfive/Documents/summertime-protocol/node_modules/@openzeppelin/contracts/drafts/EIP712.sol": {
+      "lastModificationDate": 1635856057940,
+      "contentHash": "fc999322255c14bf39f2047b1b27eefa",
+      "sourceName": "@openzeppelin/contracts/drafts/EIP712.sol",
+      "solcConfig": {
+        "version": "0.6.6",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.6.0 <0.8.0"
+      ],
+      "artifacts": [
+        "EIP712"
+      ]
+    },
+    "/Users/0xnumbuhfive/Documents/summertime-protocol/contracts/SimpleInterestRateModel.sol": {
+      "lastModificationDate": 1635854322416,
+      "contentHash": "b934d11af61493006bfa3bb0f7f88839",
+      "sourceName": "contracts/SimpleInterestRateModel.sol",
+      "solcConfig": {
+        "version": "0.6.6",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/access/Ownable.sol",
+        "@openzeppelin/contracts/math/SafeMath.sol",
+        "./interfaces/InterestRateModel.sol"
+      ],
+      "versionPragmas": [
+        "^0.6.6"
+      ],
+      "artifacts": [
+        "SimpleInterestRateModel"
+      ]
+    },
+    "/Users/0xnumbuhfive/Documents/summertime-protocol/contracts/interfaces/InterestRateModel.sol": {
+      "lastModificationDate": 1635854322418,
+      "contentHash": "7a20334226fc3f5f2baa94b9b3571c6c",
+      "sourceName": "contracts/interfaces/InterestRateModel.sol",
+      "solcConfig": {
+        "version": "0.6.6",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.6.6"
+      ],
+      "artifacts": [
+        "InterestRateModel"
+      ]
+    },
+    "/Users/0xnumbuhfive/Documents/summertime-protocol/contracts/controllers/ShellDebtManager.sol": {
+      "lastModificationDate": 1638786079268,
+      "contentHash": "428721ee1cce09d4c2785964159dc84d",
+      "sourceName": "contracts/controllers/ShellDebtManager.sol",
+      "solcConfig": {
+        "version": "0.6.6",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/access/Ownable.sol",
+        "@openzeppelin/contracts/utils/ReentrancyGuard.sol",
+        "../config/SummerTimeCoreConfig.sol",
+        "../tokens/SHELL.sol",
+        "../interfaces/InterestRateModel.sol",
+        "../interfaces/FarmingStrategy.sol",
+        "./SummerTimeVault.sol"
+      ],
+      "versionPragmas": [
+        "^0.6.6"
+      ],
+      "artifacts": [
+        "ShellDebtManager"
+      ]
+    },
+    "/Users/0xnumbuhfive/Documents/summertime-protocol/node_modules/@openzeppelin/contracts/utils/ReentrancyGuard.sol": {
+      "lastModificationDate": 1635856057955,
+      "contentHash": "1c60f58cee45c61469e1aea31e4dd879",
+      "sourceName": "@openzeppelin/contracts/utils/ReentrancyGuard.sol",
+      "solcConfig": {
+        "version": "0.6.6",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.6.0 <0.8.0"
+      ],
+      "artifacts": [
+        "ReentrancyGuard"
+      ]
+    },
+    "/Users/0xnumbuhfive/Documents/summertime-protocol/contracts/config/SummerTimeCoreConfig.sol": {
+      "lastModificationDate": 1638455680468,
+      "contentHash": "f84afb0c3d1242fcaf178191d2a3c7cf",
+      "sourceName": "contracts/config/SummerTimeCoreConfig.sol",
+      "solcConfig": {
+        "version": "0.6.6",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../constants/Defaults.sol"
+      ],
+      "versionPragmas": [
+        "^0.6.6"
+      ],
+      "artifacts": [
+        "SummerTimeCoreConfig"
+      ]
+    },
+    "/Users/0xnumbuhfive/Documents/summertime-protocol/contracts/tokens/SHELL.sol": {
+      "lastModificationDate": 1635854322419,
+      "contentHash": "1e1acab2e54033715b4c29e604f2272b",
+      "sourceName": "contracts/tokens/SHELL.sol",
+      "solcConfig": {
+        "version": "0.6.6",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/token/ERC20/ERC20.sol",
+        "@openzeppelin/contracts/token/ERC20/ERC20Burnable.sol",
+        "@openzeppelin/contracts/drafts/ERC20Permit.sol",
+        "@openzeppelin/contracts/access/Ownable.sol"
+      ],
+      "versionPragmas": [
+        "^0.6.6"
+      ],
+      "artifacts": [
+        "ShellStableCoin"
+      ]
+    },
+    "/Users/0xnumbuhfive/Documents/summertime-protocol/contracts/interfaces/FarmingStrategy.sol": {
+      "lastModificationDate": 1635854322418,
+      "contentHash": "f514d7ec2832e9f3a0646dbdec441601",
+      "sourceName": "contracts/interfaces/FarmingStrategy.sol",
+      "solcConfig": {
+        "version": "0.6.6",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.6.6"
+      ],
+      "artifacts": [
+        "FarmingStrategy"
+      ]
+    },
+    "/Users/0xnumbuhfive/Documents/summertime-protocol/contracts/constants/Defaults.sol": {
+      "lastModificationDate": 1636716139269,
+      "contentHash": "c42e8ddf971591ca84a82e14394c723c",
+      "sourceName": "contracts/constants/Defaults.sol",
+      "solcConfig": {
+        "version": "0.6.6",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.6.6"
+      ],
+      "artifacts": [
+        "DefaultConfig"
+      ]
+    },
+    "/Users/0xnumbuhfive/Documents/summertime-protocol/node_modules/@openzeppelin/contracts/token/ERC20/ERC20Burnable.sol": {
+      "lastModificationDate": 1635856057948,
+      "contentHash": "1603b7aab78c87467dde869fd19ec86b",
+      "sourceName": "@openzeppelin/contracts/token/ERC20/ERC20Burnable.sol",
+      "solcConfig": {
+        "version": "0.6.6",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../../utils/Context.sol",
+        "./ERC20.sol"
+      ],
+      "versionPragmas": [
+        ">=0.6.0 <0.8.0"
+      ],
+      "artifacts": [
+        "ERC20Burnable"
+      ]
+    },
+    "/Users/0xnumbuhfive/Documents/summertime-protocol/contracts/SummerTimeCore.sol": {
+      "lastModificationDate": 1638790360389,
+      "contentHash": "a6aeb5a7c6ad34c74cc4afc38c4ae9d7",
+      "sourceName": "contracts/SummerTimeCore.sol",
+      "solcConfig": {
+        "version": "0.6.6",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/access/Ownable.sol",
+        "./controllers/ShellDebtManager.sol"
+      ],
+      "versionPragmas": [
+        "^0.6.6"
+      ],
+      "artifacts": [
+        "SummerTimeCore"
+      ]
+    },
+    "/Users/0xnumbuhfive/Documents/summertime-protocol/contracts/interfaces/WBNB.sol": {
+      "lastModificationDate": 1635854322418,
+      "contentHash": "8afa3da53c8b072dce9f51533570a7bf",
+      "sourceName": "contracts/interfaces/WBNB.sol",
+      "solcConfig": {
+        "version": "0.6.6",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/token/ERC20/IERC20.sol"
+      ],
+      "versionPragmas": [
+        "^0.6.6"
+      ],
+      "artifacts": [
+        "IWBNB"
+      ]
+    },
+    "/Users/0xnumbuhfive/Documents/summertime-protocol/node_modules/@openzeppelin/contracts/token/ERC20/SafeERC20.sol": {
+      "lastModificationDate": 1635856057958,
+      "contentHash": "33e22842646d746e5c4124c2fdc051aa",
+      "sourceName": "@openzeppelin/contracts/token/ERC20/SafeERC20.sol",
+      "solcConfig": {
+        "version": "0.6.6",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./IERC20.sol",
+        "../../math/SafeMath.sol",
+        "../../utils/Address.sol"
+      ],
+      "versionPragmas": [
+        ">=0.6.0 <0.8.0"
+      ],
+      "artifacts": [
+        "SafeERC20"
+      ]
+    },
+    "/Users/0xnumbuhfive/Documents/summertime-protocol/node_modules/@openzeppelin/contracts/utils/Address.sol": {
+      "lastModificationDate": 1635856057934,
+      "contentHash": "7aa46886ff5abe7515496208a5e2ce5a",
+      "sourceName": "@openzeppelin/contracts/utils/Address.sol",
+      "solcConfig": {
+        "version": "0.6.6",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.6.2 <0.8.0"
+      ],
+      "artifacts": [
+        "Address"
+      ]
+    },
+    "/Users/0xnumbuhfive/Documents/summertime-protocol/contracts/FarmingStrategy.sol": {
+      "lastModificationDate": 1635854322416,
+      "contentHash": "217e6c0bb6e38c6f0d443f44a54f3979",
+      "sourceName": "contracts/FarmingStrategy.sol",
+      "solcConfig": {
+        "version": "0.6.6",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/access/Ownable.sol",
+        "@openzeppelin/contracts/utils/ReentrancyGuard.sol",
+        "@openzeppelin/contracts/token/ERC20/IERC20.sol",
+        "@openzeppelin/contracts/token/ERC20/SafeERC20.sol",
+        "@openzeppelin/contracts/math/SafeMath.sol",
+        "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol",
+        "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol",
+        "./interfaces/IPancakeswapFarm.sol"
+      ],
+      "versionPragmas": [
+        "^0.6.6"
+      ],
+      "artifacts": [
+        "FarmingStrategy"
+      ]
+    },
+    "/Users/0xnumbuhfive/Documents/summertime-protocol/node_modules/@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol": {
+      "lastModificationDate": 1635854362962,
+      "contentHash": "3fd36426274a5b35f7e702f87ba08a8e",
+      "sourceName": "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol",
+      "solcConfig": {
+        "version": "0.6.6",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./IUniswapV2Router01.sol"
+      ],
+      "versionPragmas": [
+        ">=0.6.2"
+      ],
+      "artifacts": [
+        "IUniswapV2Router02"
+      ]
+    },
+    "/Users/0xnumbuhfive/Documents/summertime-protocol/contracts/interfaces/IPancakeswapFarm.sol": {
+      "lastModificationDate": 1635854322418,
+      "contentHash": "600185d9291fc29da3d644557400969c",
+      "sourceName": "contracts/interfaces/IPancakeswapFarm.sol",
+      "solcConfig": {
+        "version": "0.6.6",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.6.6"
+      ],
+      "artifacts": [
+        "IPancakeswapFarm"
+      ]
+    },
+    "/Users/0xnumbuhfive/Documents/summertime-protocol/node_modules/@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router01.sol": {
+      "lastModificationDate": 1635854362962,
+      "contentHash": "95d8729b2c698dc663322167b3c085fe",
+      "sourceName": "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router01.sol",
+      "solcConfig": {
+        "version": "0.6.6",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.6.2"
+      ],
+      "artifacts": [
+        "IUniswapV2Router01"
+      ]
+    },
+    "/Users/0xnumbuhfive/Documents/summertime-protocol/contracts/FairLPPriceOracle.sol": {
+      "lastModificationDate": 1637917841714,
+      "contentHash": "222db9b8e55a234eba0ebf853970bae7",
+      "sourceName": "contracts/FairLPPriceOracle.sol",
+      "solcConfig": {
+        "version": "0.6.6",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/access/Ownable.sol",
+        "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol",
+        "./helpers/LinkPriceOracle.sol",
+        "./libraries/MathUtils.sol"
+      ],
+      "versionPragmas": [
+        "^0.6.6"
+      ],
+      "artifacts": [
+        "FairLPPriceOracle"
+      ]
+    },
+    "/Users/0xnumbuhfive/Documents/summertime-protocol/contracts/helpers/LinkPriceOracle.sol": {
+      "lastModificationDate": 1637914946444,
+      "contentHash": "bde2dd3a0f6731e2257097a26576095f",
+      "sourceName": "contracts/helpers/LinkPriceOracle.sol",
+      "solcConfig": {
+        "version": "0.6.6",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/access/Ownable.sol",
+        "@openzeppelin/contracts/utils/SafeCast.sol",
+        "@openzeppelin/contracts/math/SafeMath.sol",
+        "@chainlink/contracts/src/v0.6/interfaces/AggregatorV3Interface.sol"
+      ],
+      "versionPragmas": [
+        "^0.6.6"
+      ],
+      "artifacts": [
+        "PriceOracle"
+      ]
+    },
+    "/Users/0xnumbuhfive/Documents/summertime-protocol/contracts/libraries/MathUtils.sol": {
+      "lastModificationDate": 1635854322419,
+      "contentHash": "dc0fae308f7d4e45c65d356c4c4909cd",
+      "sourceName": "contracts/libraries/MathUtils.sol",
+      "solcConfig": {
+        "version": "0.6.6",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.6.6"
+      ],
+      "artifacts": [
+        "MathUtils"
+      ]
+    },
+    "/Users/0xnumbuhfive/Documents/summertime-protocol/node_modules/@openzeppelin/contracts/utils/SafeCast.sol": {
+      "lastModificationDate": 1635856057957,
+      "contentHash": "c227dcf457382aabf2d78218f6457799",
+      "sourceName": "@openzeppelin/contracts/utils/SafeCast.sol",
+      "solcConfig": {
+        "version": "0.6.6",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.6.0 <0.8.0"
+      ],
+      "artifacts": [
+        "SafeCast"
+      ]
+    },
+    "/Users/0xnumbuhfive/Documents/summertime-protocol/node_modules/@chainlink/contracts/src/v0.6/interfaces/AggregatorV3Interface.sol": {
+      "lastModificationDate": 1635854380726,
+      "contentHash": "57d487d5ebb80b57ceb68a4d9bd884e3",
+      "sourceName": "@chainlink/contracts/src/v0.6/interfaces/AggregatorV3Interface.sol",
+      "solcConfig": {
+        "version": "0.6.6",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.6.0"
+      ],
+      "artifacts": [
+        "AggregatorV3Interface"
+      ]
+    },
+    "/Users/0xnumbuhfive/Documents/summertime-protocol/contracts/interfaces/MasterChef.sol": {
+      "lastModificationDate": 1635854322418,
+      "contentHash": "91bbbbd8dcc7ceb909cb552f47e5db9e",
+      "sourceName": "contracts/interfaces/MasterChef.sol",
+      "solcConfig": {
+        "version": "0.6.6",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.6.6"
+      ],
+      "artifacts": [
+        "MasterChef"
+      ]
+    }
+  }
+}

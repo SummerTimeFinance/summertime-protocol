@@ -6,6 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "prettier": "prettier --write 'contracts/**/*.sol'",
+    "remixd": "remixd -s /Users/0xnumbuhfive/Documents/summertime-protocol -u https://remix.ethereum.org",
     "compile": "waffle"
   },
   "keywords": [
@@ -38,6 +39,7 @@
     "prettier": "^2.4.1",
     "prettier-plugin-solidity": "^1.0.0-beta.17",
     "solc": "^0.6.6",
+    "solhint": "^3.3.6",
     "truffle": "^5.4.0"
   }
 }
