@@ -5,7 +5,7 @@ import "../constants/Defaults.sol";
 
 contract SummerTimeCoreConfig is DefaultConfig {
     // Note: The treasury admin will be set as the deployer address
-    address public treasuryAdminAddress;
+    address public platformTreasuryAdminAddress;
 
     // Default platform interest rate: 5%
     address public platformInterestRateAddress;
@@ -38,8 +38,8 @@ contract SummerTimeCoreConfig is DefaultConfig {
     // Targeted CCR of a vault (1.2), once liquidation is triggered
     uint256 public targetedCollateralCoverageRatio = 12e17;
 
-    // Collateral discount applied to the user's collateral: 50% (0.5)
-    uint256 public platformDefaultDiscountApplied = 5e17;
+    // The collateral discount applied to the user's collateral: 60% (0.6)
+    uint256 public platformDefaultDiscountApplied = 6e17;
 
     // The threshold at which a borrow position will be considered
     // undercollateralized and subjected to liquidation for each collateral: 0.95
@@ -53,12 +53,6 @@ contract SummerTimeCoreConfig is DefaultConfig {
 
     // Liquidation fee of 0.5% is applied to all liquidations
     uint256 public liquidationFee = 5e17;
-
-    // Can be set to $25, same as the cost to opening a bank account
-    uint256 public vaultOpeningFee = 0;
-
-    // Initial set to: 0
-    uint256 public vaultClosingFee = 0;
 
     // Debt borrowing one-time fee: 0.5%
     uint256 public debtBorrowingFee = 5e17;
