@@ -40,7 +40,7 @@ contract ShellDebtManager is
         );
         // TODO: Create the treasury vault, to absorb liquidation collateral fee
         // And also to absorb & hold other supported assets such as USDC
-        treasuryAdminAddress = msg.sender;
+        platformTreasuryAdminAddress = msg.sender;
         platformInterestRateModel = InterestRateModel(interestRateModel);
         farmingStrategy = FarmingStrategy(farmingStrategyAddress);
     }
@@ -182,24 +182,24 @@ contract ShellDebtManager is
         nonReentrant
     {
         UserVaultInfo storage userVault = platformUserVaults[msg.sender];
-        // Update user's collateral total value to the current value according to current market prices
-        // IF the user has any DEBT, calculate & add to the DEBT the new accrued interest amount
+        // Update user's collateral total value according to current market prices
+        // IF the user has any DEBT, update add the accrued interest rate to the user's DEBT
         updateUserCollateralCoverageRatio(userVault);
 
-        // User must deposit an amount larger than 0
+        // User must borrow an amount larger than 0
         require(
             requestedBorrowAmount > 0,
-            "Borrow: Must borrow an amount above 0"
+            "SHELL: Must borrow an amount above 0"
         );
 
-        // Is borrrowing disabled globally
+        // Check if borrowing disabled globally
         require(protocolBorrowingPaused == false, "Borrowing is paused.");
 
-        // Has the global DEBT ceiling been hit
+        // Check if the global DEBT ceiling been hit
         uint256 SHELLTotalSupply = totalSupply();
         require(
             SHELLTotalSupply.add(requestedBorrowAmount) < ShellStableCoin.cap(),
-            "Borrow: debt ceiling hit, can not borrow."
+            "SHELL: Debt ceiling hit, no more borrowing."
         );
 
         uint256 newTotalDebtBorrowed = SafeMath.add(
@@ -215,18 +215,17 @@ contract ShellDebtManager is
         // Check if new CCR isn't over the base CCR, thus allow the user to borrow
         if (newCollateralCoverageRatio < baseCollateralCoverageRatio) {
             revert(
-                "Borrow: new borrow would put vault below minimum debt/collateral ratio"
+                "SHELL: new borrow would put vault below the min accepted CCR"
             );
         }
         // If the new CCR is all good, set the new DC ratio for user
-        // TODO: Inform user the vault is close to the base CCR
+        // TODO: Inform user the vault is close to the base CCR (frontend)
         userVault.collateralCoverageRatio = newCollateralCoverageRatio;
 
         // If all is well, let the user borrow SHELL stablecoin for use
-        // Add borrowed amount to the total amount borrowed by the user [if borrowed]
+        // Total debt borrowed is updated automatically in the SHELL smart contract
         userVault.debtBorrowedAmount = newTotalDebtBorrowed;
 
-        // Update protocol's reserve amount (sell SHELL for USDC)
         // Mint & transfer SHELL borrowed to the user
         _mint(msg.sender, requestedBorrowAmount);
         emit UserBorrowedDebt(userVault.ID, msg.sender, requestedBorrowAmount);
@@ -289,7 +288,7 @@ contract ShellDebtManager is
             amountToSendToReserves
         );
         // Send reserve amount deducted to the reserves
-        _transfer(msg.sender, treasuryAdminAddress, amountToSendToReserves);
+        _transfer(msg.sender, platformTreasuryAdminAddress, amountToSendToReserves);
 
         // Burn the rest
         uint256 amountRepaidBeingBurned = SafeMath.sub(
@@ -365,7 +364,7 @@ contract ShellDebtManager is
         );
 
         UserVaultInfo storage treasuryVault = platformUserVaults[
-            treasuryAdminAddress
+            platformTreasuryAdminAddress
         ];
         // Then migrate the chunk of collateral taken to the liquidator's vault
         for (uint256 index = 0; index < collateralChunks.length; index++) {
@@ -495,18 +494,19 @@ contract ShellDebtManager is
         uint256 timeDifference = uint256(
             currentTimestamp - userVault.lastDebtUpdate
         );
-        uint256 interestToBeApplied = timeDifference.mul(
+        uint256 interestRateToBeApplied = timeDifference.mul(
             perSecondInterestRate(
                 platformInterestRateModel.getBorrowRate(
                     platformTotalCollateralValue,
-                    totalDebtBorrowed,
+                    // The SHELL supply units is also the platform's total debt value
+                    totalSupply(),
                     platformTotalReserves
                 )
             )
         );
         uint256 accruedInterest = SafeMath.mul(
             userVault.debtBorrowedAmount,
-            interestToBeApplied
+            interestRateToBeApplied
         );
 
         // Update user's current DEBT amount
@@ -517,7 +517,7 @@ contract ShellDebtManager is
         // TIP: Should be assert, using require to see issues faster
         require(
             newBorrowedDebtAmount > userVault.debtBorrowedAmount,
-            "Deposit: new debtBorrowedAmount can not be less than previous"
+            "Deposit: new debtBorrowedAmount can not be less than the previous one"
         );
         userVault.debtBorrowedAmount = newBorrowedDebtAmount;
         // Don't forget to update the lastDebtUpdate timestamp
@@ -553,7 +553,7 @@ contract ShellDebtManager is
         uint256 currentCollateralValue,
         uint256 loanValue
     ) internal view returns (uint256) {
-        uint256 collateralCoverageRatio = discountApplied
+        uint256 collateralCoverageRatio = platformDefaultDiscountApplied
             .mul(currentCollateralValue)
             .div(loanValue);
         return collateralCoverageRatio;

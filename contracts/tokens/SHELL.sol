@@ -41,7 +41,10 @@ contract ShellStableCoin is ERC20, ERC20Burnable, ERC20Permit, Ownable {
     }
 
     function _updateCap(uint256 newCap_) external onlyOwner {
-        require(newCap_ > 0, "ERC20Capped: new cap is 0");
+        require(
+            newCap_ > 0 && newCap_ > ERC20.totalSupply(),
+            "ERC20Capped: new cap is 0 or less than total supply"
+        );
         _cap = newCap_;
     }
 

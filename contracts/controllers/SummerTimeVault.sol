@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
 
-import "../config/GeneralVaultConfig.sol";
+// import "../config/GeneralVaultConfig.sol";
 import "../config/CollateralVaultConfig.sol";
 import "../controllers/UserVault.sol";
 
@@ -31,11 +31,16 @@ import "../interfaces/FairLPPriceOracle.sol";
 
 contract SummerTimeVault is
     Ownable,
-    GeneralVaultConfig,
     CollateralVaultConfig,
     UserVault
 {
     using SafeMath for uint256;
+
+    // Can be set to $25, same as the cost to opening a bank account
+    uint256 public vaultOpeningFee = 0;
+
+    // Initial set to: 0
+    uint256 public vaultClosingFee = 0;
 
     // Our price source of each of the LP collateral on the platform
     FairLPPriceOracle internal fairLPPriceSource;
@@ -152,7 +157,7 @@ contract SummerTimeVault is
         // newCollateralVault.farmContractAddress = uniswapFactoryAddress;
         newCollateralVault.strategyAddress = strategyAddress;
         // @dev may use this in v2.0, may complicate a lot of things in this iteration
-        newCollateralVault.discountApplied = 5e17;
+        newCollateralVault.discountApplied = 6e17;
         newCollateralVault.maxCollateralAmountAccepted = SafeMath.mul(
             uint256(1000),
             uint256(10**18)
@@ -248,7 +253,7 @@ contract SummerTimeVault is
         return true;
     }
 
-    // For now we are going to use a global debt cieling
+    // For now we are going to use the global debt cieling
     // function updateDebtCeiling(
     //     address collateralAddress,
     //     uint256 newDebtCeilingAmount
@@ -268,6 +273,20 @@ contract SummerTimeVault is
     //     emit VaultCollateralCoverageRatioUpdated(newCollateralCoverageRatio);
     //     return true;
     // }
+
+    function updateDiscountApplied(
+        address collateralAddress,
+        uint256 newDiscountApplied
+    ) external onlyOwner collateralAccepted(collateralAddress) returns (bool) {
+        VaultConfig storage vault = vaultAvailable[collateralAddress];
+        // Only update the collateral discount applied if it's less than the previous one
+        // To prevent automated user liquidations that would happen after if you increased the discout
+        if (vault.discountApplied > newDiscountApplied) {
+            vault.discountApplied = newDiscountApplied;
+            emit VaultCollateralDiscountAppliedUpdated(newDiscountApplied);
+            return true;
+        }
+    }
 
     function updateMaxCollateralAmountAccepted(
         address collateralAddress,
@@ -349,7 +368,7 @@ contract SummerTimeVault is
     event VaultPriceOracle0AddressUpdated(address newPriceOracle0Address);
     event VaultPriceOracle1AddressUpdated(address newPriceOracle1Address);
     event VaultDebtCeilingUpdated(uint256 newDebtCeiling);
-    event VaultCollateralCoverageRatioUpdated(
+    event VaultCollateralDiscountAppliedUpdated(
         uint256 newCollateralCoverageRatio
     );
     event VaultMaxCollateralAmountAcceptedUpdated(

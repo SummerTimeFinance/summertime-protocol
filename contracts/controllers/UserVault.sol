@@ -7,10 +7,13 @@ contract UserVault {
 
     struct UserVaultInfo {
         uint256 ID;
-        // The collateral amount of each collateral the user has deposited
+        // The total amount of each collateral the user has deposited
         mapping(address => uint256) collateralAmount;
-        // The collateral value of each collateral the user has
+        // The value in dollars of each collateral the user has deposited
         mapping(address => uint256) collateralValue;
+        // The last calculated collateral coverage ratio for each collateral
+        // Calcuated using (Collateral * Discount) = 1
+        // mapping(address => uint256) collateralCoveRatio;
         // Calculated on each deposit, withdawal, borrowing and repayment
         uint256 totalCollateralValue;
         uint256 debtBorrowedAmount;
