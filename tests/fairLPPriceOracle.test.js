@@ -2,7 +2,6 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 describe("SummerTimeDAO", () => {
-
   it("Should deploy FairLPPriceOracle contract", async () =>  {
     const FairLPPriceOracleInstance = await ethers.getContractFactory(
       'contracts/FairLPPriceOracle.sol:FairLPPriceOracle'
@@ -39,6 +38,7 @@ describe("SummerTimeDAO", () => {
     console.log('CAKE-BNB fair LP price: ', CakeBNBLPPrice.toString());
     expect(CakeBNBLPPrice).to.be.an('object');
   })
-  .timeout(50000);
-
+  .timeout(
+    50000
+  );
 });

@@ -25,6 +25,7 @@ app.bsc.mainnet.yaml
 secrets.json
 soljson-v*
 artifacts
+.env.yaml
 
 ### Bower ###
 bower_components
