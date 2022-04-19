@@ -29,10 +29,17 @@ import "../interfaces/FairLPPriceOracle.sol";
 // Total addressable market size: $2.2B (BSC, using PancakeSwap only)
 // current collaterals that are accepted
 
-contract SummerTimeVault is Ownable, GeneralVaultConfig, CollateralVaultConfig, UserVault {
+contract SummerTimeVault is
+    Ownable,
+    GeneralVaultConfig,
+    CollateralVaultConfig,
+    UserVault
+{
     using SafeMath for uint256;
 
+    // Our price source of each of the LP collateral on the platform
     FairLPPriceOracle internal fairLPPriceSource;
+
     // structure: mapping(collateralAddress => VaultConfig)
     mapping(address => VaultConfig) internal vaultAvailable;
     address[] internal vaultCollateralAddresses;
@@ -61,12 +68,10 @@ contract SummerTimeVault is Ownable, GeneralVaultConfig, CollateralVaultConfig, 
 
     constructor(address fairLPPriceOracleAddress) internal {
         if (fairLPPriceOracleAddress == address(0)) {
-            revert(
-                "SummerTimeVaultConstructor: Invalid factory address provided."
-            );
+            revert("VaultConstructor: Invalid price oracle address provided.");
         }
         fairLPPriceSource = FairLPPriceOracle(fairLPPriceOracleAddress);
-        // Warning: that external functions of a contract cannot be called while it is being constructed.
+        // NOTE: External functions of a contract cannot be called in the constructor.
         // this.createUserVault(msg.sender);
     }
 
@@ -141,9 +146,8 @@ contract SummerTimeVault is Ownable, GeneralVaultConfig, CollateralVaultConfig, 
         newCollateralVault.token1 = token1;
         newCollateralVault.token0PriceOracle = token0PriceOracle;
         newCollateralVault.token1PriceOracle = token1PriceOracle;
-        newCollateralVault.fairPrice = fairLPPriceSource.getCurrentFairLPTokenPrice(
-            addressForLPPair
-        );
+        newCollateralVault.fairPrice = fairLPPriceSource
+            .getCurrentFairLPTokenPrice(addressForLPPair);
         newCollateralVault.uniswapFactoryAddress = tokenPairsForLP.factory();
         // newCollateralVault.farmContractAddress = uniswapFactoryAddress;
         newCollateralVault.strategyAddress = strategyAddress;
@@ -157,6 +161,7 @@ contract SummerTimeVault is Ownable, GeneralVaultConfig, CollateralVaultConfig, 
         newCollateralVault.borrowingPaused = false;
         newCollateralVault.disabled = false;
 
+        // The discount provided to be applied should be larger than 1%
         if (discountApplied > 1e16) {
             newCollateralVault.discountApplied = discountApplied;
         }
@@ -166,7 +171,7 @@ contract SummerTimeVault is Ownable, GeneralVaultConfig, CollateralVaultConfig, 
             newCollateralVault.index = farmingContractIndex;
         }
 
-        // Add vault collateral address to accepted collateral types
+        // Add vault collateral address to accepted this collateral type from users
         vaultCollateralAddresses.push(addressForLPPair);
         return addressForLPPair;
     }
@@ -191,19 +196,23 @@ contract SummerTimeVault is Ownable, GeneralVaultConfig, CollateralVaultConfig, 
         VaultConfig storage vault = vaultAvailable[collateralAddress];
         require(
             vault.index != newFarmIndex,
-            "newFarmIndex provided is similar with current index in storage"
+            "newFarmIndex provided is similar to current index in storage"
         );
         require(
             vault.farmPoolID != newFarmPoolID,
-            "newFarmPoolID provided is similar with current farmPoolID in storage"
+            "newFarmPoolID provided is similar to current farmPoolID in storage"
         );
 
         // TODO:
         // unstake those tokens, compound the harvested rewards
-        // then restake/migrate them to the new index
+        // then restake/migrate them to the new newStrategyAddress
         uint256 previousFarmIndex = vault.index;
         vault.index = newFarmIndex;
-        emit VaultFarmIndexAndPoolIDUpdated(previousFarmIndex, newFarmIndex, newFarmPoolID);
+        emit VaultFarmIndexAndPoolIDUpdated(
+            previousFarmIndex,
+            newFarmIndex,
+            newFarmPoolID
+        );
         return true;
     }
 
@@ -239,6 +248,7 @@ contract SummerTimeVault is Ownable, GeneralVaultConfig, CollateralVaultConfig, 
         return true;
     }
 
+    // For now we are going to use a global debt cieling
     // function updateDebtCeiling(
     //     address collateralAddress,
     //     uint256 newDebtCeilingAmount
@@ -280,7 +290,7 @@ contract SummerTimeVault is Ownable, GeneralVaultConfig, CollateralVaultConfig, 
     {
         VaultConfig storage vault = vaultAvailable[collateralAddress];
         vault.disabled = !vault.disabled;
-        emit CollateralVaultState(collateralAddress, vault.disabled);
+        emit CollateralVaultOperationState(collateralAddress, vault.disabled);
         return vault.disabled;
     }
 
@@ -327,8 +337,15 @@ contract SummerTimeVault is Ownable, GeneralVaultConfig, CollateralVaultConfig, 
         address token0,
         address token1
     );
-    event CollateralVaultState(address collateralAddress, bool isDisabled);
-    event VaultFarmIndexAndPoolIDUpdated(uint256 previousFarmIndex, uint256 newFarmIndex, uint256 newFarmPoolID);
+    event CollateralVaultOperationState(
+        address collateralAddress,
+        bool isDisabled
+    );
+    event VaultFarmIndexAndPoolIDUpdated(
+        uint256 previousFarmIndex,
+        uint256 newFarmIndex,
+        uint256 newFarmPoolID
+    );
     event VaultPriceOracle0AddressUpdated(address newPriceOracle0Address);
     event VaultPriceOracle1AddressUpdated(address newPriceOracle1Address);
     event VaultDebtCeilingUpdated(uint256 newDebtCeiling);

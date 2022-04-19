@@ -25,7 +25,10 @@ contract FairLPPriceOracle is Ownable, PriceOracle {
         returns (uint256)
     {
         uint256 lastLPTokenPrice = currentFairLPTokenPrice[_pairAddress];
-        require(lastLPTokenPrice > 0, "getLastTokenPrice: token price can not be 0");
+        require(
+            lastLPTokenPrice > 0,
+            "getLastTokenPrice: token price can not be 0"
+        );
         return lastLPTokenPrice;
     }
 

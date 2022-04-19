@@ -21,7 +21,11 @@ contract SummerTimeCoreConfig is DefaultConfig {
     // @TODO: When debt is repaid, send the the 0.10% of the interest rate accrued to the reserves
     uint256 public platformTotalReserves = 0;
 
-    // Initial protocol-WIDE DEBT ceiling is: $100,000
+    // The portion of accrued interest that goes into reserves
+    // initially default percentage: 0.10%
+    uint256 public reserveFactor = 1e17;
+
+    // Initial PROTOCOL-WIDE DEBT ceiling is: $100,000
     uint256 public summerTimeDebtCeiling = 100000e18;
 
     // Used to set the mininum amount of debt a user can borrow
@@ -31,15 +35,11 @@ contract SummerTimeCoreConfig is DefaultConfig {
     // or updating an existing one, equal to 1
     uint256 public constant baseCollateralCoverageRatio = 1e18;
 
-    // The portion of accrued interest that goes into reserves
-    // initially default percentage: 0.10%
-    uint256 public reserveFactor = 1e17;x
-
     // Targeted CCR of a vault (1.2), once liquidation is triggered
     uint256 public targetedCollateralCoverageRatio = 12e17;
 
-    // discount applied the user's collateral: 50% (0.5)
-    uint256 public discountApplied = 5e17;
+    // Collateral discount applied to the user's collateral: 50% (0.5)
+    uint256 public platformDefaultDiscountApplied = 5e17;
 
     // The threshold at which a borrow position will be considered
     // undercollateralized and subjected to liquidation for each collateral: 0.95

@@ -26,15 +26,15 @@ contract CollateralVaultConfig is Ownable {
         uint256 farmPoolID;
         // The strategy address for this vault used by SummerTime for compounding
         address strategyAddress;
-        // the current fair LP price
-        uint256 fairPrice;
         // The price oracle to get the PRICE of the token0
         address token0PriceOracle;
         // The price oracle to get the PRICE of the token1
         address token1PriceOracle;
+        // the current fair LP price
+        uint256 fairPrice;
         // Initially , it's 0, so unlimited, should be set to $1000 while testing
         uint256 maxCollateralAmountAccepted;
-        // By default it will be 50% (5e17), 
+        // By default it will be 50% (5e17),
         // but should be adjustable depending on the collateral provided
         // For example, USDT-BUSD should have a lower discount such as 10%
         uint256 discountApplied;

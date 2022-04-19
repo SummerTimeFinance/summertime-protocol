@@ -32,7 +32,10 @@ contract PriceOracle is Ownable {
     // @dev: Returns the last stored price
     function getLastTokenPrice(address _token) external view returns (uint256) {
         PriceInfo storage tokenPriceInfo = tokenPriceFeed[_token];
-        require(tokenPriceInfo.price > 0, "getLastTokenPrice: token price can not be 0");
+        require(
+            tokenPriceInfo.price > 0,
+            "getLastTokenPrice: token price can not be 0"
+        );
         return tokenPriceInfo.price;
     }
 

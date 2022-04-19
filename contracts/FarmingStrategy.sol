@@ -19,7 +19,7 @@ contract FarmingStrategy is Ownable, ReentrancyGuard {
     using SafeMath for uint256;
 
     address public immutable summerTimeToken;
-    // For v1.0, our only focus is PancakeSwap (PCS)
+    // For v1.0, our initial/first focus is PancakeSwap(PCS) farming contract
     address public immutable tokenBeingEarned;
     // The address of the farming contract eg. PCS, Thugs etc. for each collateral
     address[] internal collateralFarmingContracts;
@@ -57,26 +57,44 @@ contract FarmingStrategy is Ownable, ReentrancyGuard {
     constructor(
         address _summerTimeToken,
         address _tokenBeingEarned,
-        address farmingContract // Add PCS contract as the 1st contract
+        address _farmingContract, // Add PCS contract as the 1st contract
+        address _uniswapLikeRouterAddress,
+        address _performanceFeeCollectingAddress,
+        address _buyBackSummerTimeDaoAddress
     ) internal {
         require(
             _summerTimeToken != address(0),
             "_summerTimeToken cannot be nil or blackhole address"
         );
-        
+
         require(
             _tokenBeingEarned != address(0),
             "_tokenBeingEarned cannot be nil or blackhole address"
         );
-        
+
         require(
-            farmingContract != address(0),
-            "PCS farmingContract cannot be nil or blackhole address"
+            _farmingContract != address(0),
+            "PCS _farmingContract cannot be nil or blackhole address"
         );
-        
+
+        require(
+            _uniswapLikeRouterAddress != address(0),
+            "_uniswapLikeRouterAddress cannot be nil or blackhole address"
+        );
+
+        require(
+            _performanceFeeCollectingAddress != address(0),
+            "_performanceFeeCollectingAddress cannot be nil or blackhole address"
+        );
+
+        require(
+            _buyBackSummerTimeDaoAddress != address(0),
+            "_buyBackSummerTimeDaoAddress cannot be nil or blackhole address"
+        );
+
         summerTimeToken = _summerTimeToken;
         tokenBeingEarned = _tokenBeingEarned;
-        collateralFarmingContracts.push(farmingContract);
+        collateralFarmingContracts.push(_farmingContract);
     }
 
     function addFarmingContract(address _farmingContract)
@@ -108,12 +126,11 @@ contract FarmingStrategy is Ownable, ReentrancyGuard {
         }
     }
 
-    function deposit(uint256 farmIndex, address collateralAddress, uint256 depositAmount)
-        public
-        onlyOwner
-        nonReentrant
-        returns (uint256)
-    {
+    function deposit(
+        uint256 farmIndex,
+        address collateralAddress,
+        uint256 depositAmount
+    ) public onlyOwner nonReentrant returns (uint256) {
         IERC20(collateralAddress).transferFrom(
             address(msg.sender),
             address(this),
@@ -129,40 +146,46 @@ contract FarmingStrategy is Ownable, ReentrancyGuard {
         farm(farmIndex, collateralAddress, depositAmount);
     }
 
-    function farm(uint256 farmIndex, address collateralAddress, uint256 depositAmount) internal virtual {
+    function farm(
+        uint256 farmIndex,
+        address collateralAddress,
+        uint256 depositAmount
+    ) internal virtual {
         // Get the correct farm, for now it should be just 0, for PCS
         address farmingContract = collateralFarmingContracts[farmIndex];
-        IERC20(collateralAddress).safeIncreaseAllowance(farmingContract, depositAmount);
-
-        uint256 pid = collateralPoolIDs[collateralAddress];
-        uint256 currentBalanceNotStaked = IERC20(collateralAddress).balanceOf(address(this));
-        IPancakeswapFarm(farmingContract).deposit(pid, currentBalanceNotStaked);
-
-        totalAmountStaked = SafeMath.add(
-            totalAmountStaked,
+        IERC20(collateralAddress).safeIncreaseAllowance(
+            farmingContract,
             depositAmount
         );
+
+        uint256 pid = collateralPoolIDs[collateralAddress];
+        uint256 currentBalanceNotStaked = IERC20(collateralAddress).balanceOf(
+            address(this)
+        );
+        IPancakeswapFarm(farmingContract).deposit(pid, currentBalanceNotStaked);
+
+        totalAmountStaked = SafeMath.add(totalAmountStaked, depositAmount);
     }
 
-    function unfarm(uint256 farmIndex, address collateralAddress, uint256 withdrawAmount) internal virtual {
+    function unfarm(
+        uint256 farmIndex,
+        address collateralAddress,
+        uint256 withdrawAmount
+    ) internal virtual {
         address farmingContract = collateralFarmingContracts[farmIndex];
         uint256 pid = collateralPoolIDs[collateralAddress];
 
-        totalAmountStaked = SafeMath.sub(
-            totalAmountStaked,
-            withdrawAmount
-        );
+        totalAmountStaked = SafeMath.sub(totalAmountStaked, withdrawAmount);
 
         IPancakeswapFarm(farmingContract).withdraw(pid, withdrawAmount);
     }
 
-    function withdraw(uint256 farmIndex, address userAddress, address collateralAddress, uint256 withdrawAmount)
-        public
-        virtual
-        onlyOwner
-        nonReentrant
-        returns (uint256)
-    {
+    function withdraw(
+        uint256 farmIndex,
+        address userAddress,
+        address collateralAddress,
+        uint256 withdrawAmount
+    ) public virtual onlyOwner nonReentrant returns (uint256) {
         require(withdrawAmount > 0, "withdrawAmount <= 0");
 
         // Check to see if the amount to withdraw is larger than what the user had staked
@@ -175,9 +198,11 @@ contract FarmingStrategy is Ownable, ReentrancyGuard {
         harvest(farmIndex, collateralAddress);
         unfarm(farmIndex, collateralAddress, withdrawAmount);
 
-        uint256 amountWanted = IERC20(collateralAddress).balanceOf(address(this));
+        uint256 amountWantedByUser = IERC20(collateralAddress).balanceOf(
+            address(this)
+        );
         require(
-            amountWanted <= withdrawAmount,
+            amountWantedByUser <= withdrawAmount,
             "amount wanted larger than withdrawal request"
         );
 
@@ -193,7 +218,10 @@ contract FarmingStrategy is Ownable, ReentrancyGuard {
     // 1. Harvest farmed tokens
     // 2. Converts farmed tokens into equal portions of the collateral tokens
     // 3. Add the portions as liquidity and stake them
-    function harvest(uint256 farmIndex, address collateralAddress) public nonReentrant {
+    function harvest(uint256 farmIndex, address collateralAddress)
+        public
+        nonReentrant
+    {
         address farmingContract = collateralFarmingContracts[farmIndex];
         uint256 pid = collateralPoolIDs[collateralAddress];
         // Fool the contract you've withdrawn some amount
@@ -201,7 +229,9 @@ contract FarmingStrategy is Ownable, ReentrancyGuard {
         IPancakeswapFarm(farmingContract).withdraw(pid, 0);
 
         // Get the amount earned, and then deduct the peformance fee & buyback fee
-        uint256 amountEarned = IERC20(tokenBeingEarned).balanceOf(address(this));
+        uint256 amountEarned = IERC20(tokenBeingEarned).balanceOf(
+            address(this)
+        );
         amountEarned = deductPerformanceFee(amountEarned);
         amountEarned = deductBuyBackFee(amountEarned);
 
@@ -278,9 +308,14 @@ contract FarmingStrategy is Ownable, ReentrancyGuard {
     }
 
     // Deduct and send the performance fee to the collection address
-    function deductPerformanceFee(uint256 amountEarned) internal returns (uint256) {
+    function deductPerformanceFee(uint256 amountEarned)
+        internal
+        returns (uint256)
+    {
         if (amountEarned > 0 && performanceFeePercentage > 0) {
-            uint256 performanceFee = amountEarned.mul(performanceFeePercentage).div(oneHunderedPercent);
+            uint256 performanceFee = amountEarned
+                .mul(performanceFeePercentage)
+                .div(oneHunderedPercent);
             IERC20(tokenBeingEarned).safeTransfer(
                 performanceFeeCollectingAddress,
                 performanceFee
@@ -294,7 +329,9 @@ contract FarmingStrategy is Ownable, ReentrancyGuard {
     // Deduct and send the buy back fee to the collection address
     function deductBuyBackFee(uint256 amountEarned) internal returns (uint256) {
         if (amountEarned > 0 && buyBackPercentage > 0) {
-            uint256 buybackFeeAmount = amountEarned.mul(buyBackPercentage).div(oneHunderedPercent);
+            uint256 buybackFeeAmount = amountEarned.mul(buyBackPercentage).div(
+                oneHunderedPercent
+            );
             IERC20(tokenBeingEarned).safeIncreaseAllowance(
                 uniswapLikeRouterAddress,
                 buybackFeeAmount

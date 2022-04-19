@@ -5,21 +5,22 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "./controllers/ShellDebtManager.sol";
 
 contract SummerTimeCore is Ownable, ShellDebtManager {
-
     constructor(
         address fairLPPriceOracle,
         address interestRateModel,
         address farmingStrategyAddress
     )
         internal
-        ShellDebtManager(fairLPPriceOracle, interestRateModel, farmingStrategyAddress)
+        ShellDebtManager(
+            fairLPPriceOracle,
+            interestRateModel,
+            farmingStrategyAddress
+        )
     {}
 
-    function updatePlatformStabilityPoolAddress(address newPlatformStabilityPool)
-        external
-        onlyOwner
-        returns (bool)
-    {
+    function updatePlatformStabilityPoolAddress(
+        address newPlatformStabilityPool
+    ) external onlyOwner returns (bool) {
         require(
             newPlatformStabilityPool != address(0),
             "must not be nil or blackhole address"
@@ -34,13 +35,13 @@ contract SummerTimeCore is Ownable, ShellDebtManager {
         returns (bool)
     {
         require(
-            newDebtCeilingAmount > 0,
-            "newDebtCeilingAmount must be an amount larger than 0"
+            newDebtCeilingAmount > 0 &&
+                newDebtCeilingAmount > summerTimeDebtCeiling,
+            "newDebtCeilingAmount must be an amount larger than 0 and summerTimeDebtCeiling"
         );
         summerTimeDebtCeiling = newDebtCeilingAmount;
         return true;
     }
-
 
     function updateMinimumDebtAmount(uint256 newMinimumDebtAmount)
         external
@@ -61,8 +62,8 @@ contract SummerTimeCore is Ownable, ShellDebtManager {
         returns (bool)
     {
         require(
-            newLiquidationIncentive > 3e18,
-            "newLiquidationIncentive must be an amount larger than 3%"
+            newLiquidationIncentive > 1e18,
+            "newLiquidationIncentive must be an amount larger than 1%"
         );
         liquidationIncentive = newLiquidationIncentive;
         return true;
@@ -81,7 +82,7 @@ contract SummerTimeCore is Ownable, ShellDebtManager {
         return true;
     }
 
-    function updateDebtBorrowingFee(uint256 newDebtBorrowingFee)
+        function updateDebtBorrowingFee(uint256 newDebtBorrowingFee)
         external
         onlyOwner
         returns (bool)
@@ -94,20 +95,12 @@ contract SummerTimeCore is Ownable, ShellDebtManager {
         return true;
     }
 
-    function pauseCollateralDepositing()
-        external
-        onlyOwner
-        returns (bool)
-    {
+    function pauseCollateralDepositing() external onlyOwner returns (bool) {
         protocolDepositingPaused = !protocolDepositingPaused;
         return protocolDepositingPaused;
     }
 
-    function pauseStablecoinBorrowing()
-        external
-        onlyOwner
-        returns (bool)
-    {
+    function pauseStablecoinBorrowing() external onlyOwner returns (bool) {
         protocolBorrowingPaused = !protocolBorrowingPaused;
         return protocolBorrowingPaused;
     }

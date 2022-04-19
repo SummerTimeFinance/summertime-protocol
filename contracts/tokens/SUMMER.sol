@@ -32,7 +32,7 @@ contract SummerTimeToken is ERC20, ERC20Capped, ERC20Permit, Ownable {
         ERC20Capped(500 * oneMillion * 10**decimals())
     {
         decimalsPlaces18 = 10**decimals();
-        
+
         // The complete breakdown of how the SUMMMER token will be distributed;
         Tokenomics[Allocations.MAXIMUM_SUPPLY] = 500 * oneMillion;
         Tokenomics[Allocations.FARMING_REWARDS] = 150 * oneMillion;
@@ -54,7 +54,7 @@ contract SummerTimeToken is ERC20, ERC20Capped, ERC20Permit, Ownable {
     function _mint(address account, uint256 amount) internal override(ERC20) {
         require(
             ERC20.totalSupply() + amount <= cap(),
-            "LEMON ERC20Capped: Max cap exceeded"
+            "SUMMER ERC20Capped: Max cap exceeded"
         );
         super._mint(account, amount);
     }

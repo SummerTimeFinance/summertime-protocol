@@ -56,7 +56,7 @@ contract ShellDebtManager is
         // Update the vault's fair LP price
         this.fetchCollateralPrice(collateralAddress);
 
-        // Is depositing disabled globally
+        // Check to see if depositing is disabled globally
         require(
             !protocolDepositingPaused,
             "depositCollateral: deposits are paused."
@@ -81,10 +81,10 @@ contract ShellDebtManager is
 
         // @TIP: Assignments between storage and memory
         // (or from calldata) always create an independent copy.
-        uint256 previousTotalCollateralValue = userVault.totalCollateralValue;
+        uint256 previousUserCollateralValue = userVault.totalCollateralValue;
         platformTotalCollateralValue = SafeMath.sub(
             platformTotalCollateralValue,
-            previousTotalCollateralValue
+            previousUserCollateralValue
         );
 
         // Update user's collateral total value to the current value according to current market prices
@@ -97,7 +97,9 @@ contract ShellDebtManager is
         );
 
         VaultConfig storage collateralVault = vaultAvailable[collateralAddress];
-        // Move the user's amount from their wallet to the farming strategy
+        // NOTE: the farming strategy can be a dummy one to only be used to
+        // hold funds safely in another address, not exactly yeild farm any tokens
+        // Move the user's amount from their wallet to the collateral's farming strategy
         farmingStrategy.deposit(
             collateralVault.index,
             collateralAddress,
@@ -304,7 +306,10 @@ contract ShellDebtManager is
     function buyRiskyUserVault(address userVaultAddress) external nonReentrant {
         // Check to see if the platformStabilityPool is not provided yet
         // And ensure the liquidator is the platformStabilityPool address
-        if (platformStabilityPool != address(0) && msg.sender == platformStabilityPool) {
+        if (
+            platformStabilityPool != address(0) &&
+            msg.sender == platformStabilityPool
+        ) {
             revert("buyRiskyVault: disabled for the community");
         }
 
@@ -313,7 +318,9 @@ contract ShellDebtManager is
             revert("buyRiskyUserVault: liquidator vault doesn't exist");
         }
 
-        UserVaultInfo storage riskyUserVault = platformUserVaults[userVaultAddress];
+        UserVaultInfo storage riskyUserVault = platformUserVaults[
+            userVaultAddress
+        ];
         // Check if the vault exists
         if (riskyUserVault.ID == 0) {
             revert("buyRiskyUserVault: user vault doesn't exist");
@@ -357,7 +364,9 @@ contract ShellDebtManager is
             riskyUserVault
         );
 
-        UserVaultInfo storage treasuryVault = platformUserVaults[treasuryAdminAddress];
+        UserVaultInfo storage treasuryVault = platformUserVaults[
+            treasuryAdminAddress
+        ];
         // Then migrate the chunk of collateral taken to the liquidator's vault
         for (uint256 index = 0; index < collateralChunks.length; index++) {
             address collateralAddress = vaultCollateralAddresses[index];
@@ -404,12 +413,16 @@ contract ShellDebtManager is
         nonReentrant
         returns (uint256)
     {
-        UserVaultInfo storage previousUserVault = platformUserVaults[msg.sender];
+        UserVaultInfo storage previousUserVault = platformUserVaults[
+            msg.sender
+        ];
         // Update user's collateral value to the current value according to current market prices
         // IF the user has any DEBT, calculate & add to the DEBT the new accrued interest amount
         updateUserCollateralCoverageRatio(previousUserVault);
 
-        UserVaultInfo storage nextUserVault = platformUserVaults[newVaultOwnerAddress];
+        UserVaultInfo storage nextUserVault = platformUserVaults[
+            newVaultOwnerAddress
+        ];
         // Check to see if the new owner already has a vault
         if (nextUserVault.ID > 0) {
             revert("Transfer: user already has a vault");

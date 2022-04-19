@@ -7,13 +7,13 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./interfaces/InterestRateModel.sol";
 
 /// @notice this is only a temporary solution before we write a quadratic equation
-// to actively calculate the right interest rate dependent on collateral vs debt utilization
+/// to actively calculate the right interest rate dependent on collateral vs debt utilization
 contract SimpleInterestRateModel is Ownable, InterestRateModel {
     using SafeMath for uint256;
     // base interest rate is 0.5%
     uint256 internal constant baseInterestRate = 5e17;
 
-    // @note setting this to 0, due to the above notice
+    // @note setting this to 0
     uint256 internal platformInterestRate = 0;
 
     function getBorrowRate(

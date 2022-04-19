@@ -62,7 +62,11 @@ contract UserVault {
             userVaultUnarchived = true;
         }
 
-        emit UserVaultCreated(createdVaultId, vaultOwnerAddress, userVaultUnarchived);
+        emit UserVaultCreated(
+            createdVaultId,
+            vaultOwnerAddress,
+            userVaultUnarchived
+        );
         return createdVaultId;
     }
 
@@ -74,7 +78,7 @@ contract UserVault {
     {
         // Overridden (defined well) in ShellDebtManager.sol contract
         // that inherits it from SummerTimeVault contract
-        (uint x, uint y) = (100, 100);
+        (uint256 x, uint256 y) = (100, 100);
         return x - y;
     }
 
