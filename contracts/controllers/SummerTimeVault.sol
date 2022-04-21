@@ -29,11 +29,7 @@ import "../interfaces/FairLPPriceOracle.sol";
 // Total addressable market size: $2.2B (BSC, using PancakeSwap only)
 // current collaterals that are accepted
 
-contract SummerTimeVault is
-    Ownable,
-    CollateralVaultConfig,
-    UserVault
-{
+contract SummerTimeVault is Ownable, CollateralVaultConfig, UserVault {
     using SafeMath for uint256;
 
     // Can be set to $25, same as the cost to opening a bank account

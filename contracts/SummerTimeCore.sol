@@ -82,7 +82,7 @@ contract SummerTimeCore is Ownable, ShellDebtManager {
         return true;
     }
 
-        function updateDebtBorrowingFee(uint256 newDebtBorrowingFee)
+    function updateDebtBorrowingFee(uint256 newDebtBorrowingFee)
         external
         onlyOwner
         returns (bool)
