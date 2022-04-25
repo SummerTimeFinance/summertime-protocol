@@ -5,21 +5,26 @@ contract UserVault {
     // VAULT ID count will start at 100,000
     uint256 private vaultIDCount = 100000;
 
+    struct CollateralVaultInfo {
+        uint256 collateralAmount;
+        uint256 collateralValue;
+        uint256 collateralCoverageRatio;
+        uint256 debtBorrowedAmount;
+        uint256 lastDebtUpdate;
+    }
+
     struct UserVaultInfo {
         uint256 ID;
-        // The total amount of each collateral the user has deposited
-        mapping(address => uint256) collateralAmount;
-        // The value in dollars of each collateral the user has deposited
-        mapping(address => uint256) collateralValue;
-        // The last calculated collateral coverage ratio for each collateral
-        // Calcuated using (Collateral * Discount) = 1
-        // mapping(address => uint256) collateralCoveRatio;
+        // vaultInfo[0] - The total amount of each collateral the user has deposited
+        // vaultInfo[1] - The value in dollars of each collateral the user has deposited
+        // vaultInfo[2] - The collateral coverage ratio for each collateral
+        // vaultInfo[3] - The debt borrowed from this collateral
+        // vaultInfo[4] - The last time the debt was updated
+        mapping(address => CollateralVaultInfo) info;
         // Calculated on each deposit, withdawal, borrowing and repayment
         uint256 totalCollateralValue;
-        uint256 debtBorrowedAmount;
+        uint256 totalDebtBorrowedAmount;
         uint256 collateralCoverageRatio;
-        // default is 0, meaning the user has no debt
-        uint256 lastDebtUpdate;
         bool softDeleted;
     }
 

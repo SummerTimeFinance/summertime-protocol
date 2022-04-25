@@ -43,7 +43,7 @@ contract SummerTimeCoreConfig is DefaultConfig {
 
     // The threshold at which a borrow position will be considered
     // undercollateralized and subjected to liquidation for each collateral: 0.95
-    uint256 public liquidationThreshold = 95e17;
+    uint256 public liquidationThresholdCCR = 95e17;
 
     // On liquidation, 4/9 of a vault's collateral is taken
     uint256 public liquidationFraction = 44444e13;
