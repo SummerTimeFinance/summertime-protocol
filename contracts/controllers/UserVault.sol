@@ -5,7 +5,7 @@ contract UserVault {
     // VAULT ID count will start at 100,000
     uint256 private vaultIDCount = 100000;
 
-    struct VaultInfo {
+    struct CollateralVaultInfo {
         uint256 collateralAmount;
         uint256 collateralValue;
         uint256 collateralCoverageRatio;
@@ -20,7 +20,7 @@ contract UserVault {
         // vaultInfo[2] - The collateral coverage ratio for each collateral
         // vaultInfo[3] - The debt borrowed from this collateral
         // vaultInfo[4] - The last time the debt was updated
-        mapping(address => VaultInfo) info;
+        mapping(address => CollateralVaultInfo) info;
         // Calculated on each deposit, withdawal, borrowing and repayment
         uint256 totalCollateralValue;
         uint256 totalDebtBorrowedAmount;

@@ -35,12 +35,12 @@ contract SummerTimeToken is ERC20, ERC20Capped, ERC20Permit, Ownable {
 
         // The complete breakdown of how the SUMMMER token will be distributed;
         Tokenomics[Allocations.MAXIMUM_SUPPLY] = 500 * oneMillion;
-        Tokenomics[Allocations.FARMING_REWARDS] = 150 * oneMillion;
-        Tokenomics[Allocations.COMMUNITY_RESERVES] = 150 * oneMillion;
-        Tokenomics[Allocations.TEAM] = 90 * oneMillion;
-        Tokenomics[Allocations.PRESALE] = 30 * oneMillion;
-        Tokenomics[Allocations.ECOSYSTEM_FUND] = 30 * oneMillion;
-        Tokenomics[Allocations.FOUNDATION] = 50 * oneMillion;
+        // Tokenomics[Allocations.FARMING_REWARDS] = 150 * oneMillion;
+        // Tokenomics[Allocations.COMMUNITY_RESERVES] = 150 * oneMillion;
+        // Tokenomics[Allocations.TEAM] = 90 * oneMillion;
+        // Tokenomics[Allocations.PRESALE] = 30 * oneMillion;
+        // Tokenomics[Allocations.ECOSYSTEM_FUND] = 30 * oneMillion;
+        // Tokenomics[Allocations.FOUNDATION] = 50 * oneMillion;
 
         // TypeError: decimalsPlaces18 Immutable variables cannot be read during contract creation time
         _mint(msg.sender, Tokenomics[Allocations.PRESALE] * 10**decimals());
