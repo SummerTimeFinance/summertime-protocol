@@ -53,8 +53,6 @@ contract ShellDebtManager is
         nonReentrant
     {
         UserVaultInfo storage userVault = platformUserVaults[msg.sender];
-        // Update the vault's fair LP price
-        this.fetchCollateralPrice(collateralAddress);
 
         // Check to see if depositing is disabled globally
         require(
@@ -80,15 +78,14 @@ contract ShellDebtManager is
         // @TIP: Assignments between storage and memory
         // (or from calldata) always create an independent copy.
         uint256 previousUserCollateralValue = userVault.totalCollateralValue;
-        platformTotalCollateralValue = SafeMath.sub(
-            platformTotalCollateralValue,
-            previousUserCollateralValue
-        );
-
         // Update user's collateral total value to the current value according to current market prices
         // IF the user has any DEBT, calculate & add to the DEBT the new accrued interest amount
         updateUserCollateralCoverageRatio(userVault);
 
+        platformTotalCollateralValue = SafeMath.sub(
+            platformTotalCollateralValue,
+            previousUserCollateralValue
+        );
         platformTotalCollateralValue = SafeMath.add(
             platformTotalCollateralValue,
             userVault.totalCollateralValue
@@ -123,29 +120,42 @@ contract ShellDebtManager is
     {
         UserVaultInfo storage userVault = platformUserVaults[msg.sender];
         uint256 currentCollateralBalance = userVault.info[collateralAddress].collateralAmount;
-        // user's previous total collateral value
-        uint256 userPrevTotalCollateralValue = userVault.totalCollateralValue;
-
+        // user must withdraw amount equal to or less than their collateral vault balance
         require(
             requestedAmountToWithdraw <= currentCollateralBalance,
-            "Vault doesn't have the amount of collateral requested"
+            "Withdraw: vault doesn't have the amount of collateral requested"
         );
 
         uint256 newCollateralBalance = SafeMath.sub(
             currentCollateralBalance,
             requestedAmountToWithdraw
         );
+        uint256 collateralFairLPPrice = this.fetchCollateralPrice(
+            collateralAddress
+        );
+        uint256 newCollateralValue = newCollateralBalance.mul(collateralFairLPPrice);
 
-        userVault.info[collateralAddress].collateralAmount = newCollateralBalance;
-        updateUserCollateralCoverageRatio(userVault);
+        // Get the new CCR according to the updated collateral value
+        uint256 newCollateralCoverageRatio = getCollateralCoverageRatio(
+            newCollateralValue,
+            userVault.info[collateralAddress].debtBorrowedAmount
+        );
 
         // Check if user's new CCR will be below the minimum required CCR
-        if (userVault.info[collateralAddress].collateralCoverageRatio < liquidationThresholdCCR.div(baseCollateralCoverageRatio)) {
+        if (newCollateralCoverageRatio < liquidationThresholdCCR.div(baseCollateralCoverageRatio)) {
             revert(
                 "Withdrawal: would put vault below minimum debt/collateral ratio"
             );
         }
 
+        // If all is well, update user's collateral amount
+        userVault.info[collateralAddress].collateralAmount = newCollateralBalance;
+        // Update user's collateral total value according to current market prices
+        // IF the user has any DEBT, update add the accrued interest rate to the user's DEBT
+        updateUserCollateralCoverageRatio(userVault);
+
+        // user's previous total collateral value
+        uint256 userPrevTotalCollateralValue = userVault.totalCollateralValue;
         platformTotalCollateralValue = SafeMath.sub(
             platformTotalCollateralValue,
             userPrevTotalCollateralValue
@@ -179,15 +189,7 @@ contract ShellDebtManager is
         onlyVaultOwner(msg.sender)
         nonReentrant
     {
-        UserVaultInfo storage userVault = platformUserVaults[msg.sender];
-
-        // User must borrow an amount larger than 0
-        require(
-            requestedBorrowAmount > 0,
-            "SHELL: Must borrow an amount above 0"
-        );
-
-        // Check if borrowing disabled globally
+         // Check if borrowing disabled globally
         require(protocolBorrowingPaused == false, "Borrowing is paused.");
 
         // Check if the global DEBT ceiling been hit
@@ -197,6 +199,13 @@ contract ShellDebtManager is
             "SHELL: Debt ceiling hit, no more borrowing."
         );
 
+        // User must borrow an amount larger than 0
+        require(
+            requestedBorrowAmount > 0,
+            "SHELL: Must borrow an amount above 0"
+        );
+
+        UserVaultInfo storage userVault = platformUserVaults[msg.sender];
         // Update user's collateral total value according to current market prices
         // IF the user has any DEBT, update add the accrued interest rate to the user's DEBT
         updateUserCollateralCoverageRatio(userVault);
@@ -235,11 +244,6 @@ contract ShellDebtManager is
         onlyVaultOwner(msg.sender)
         nonReentrant
     {
-        UserVaultInfo storage userVault = platformUserVaults[msg.sender];
-        // Update user's collateral value to the current value according to current market prices
-        // IF the user has any DEBT, calculate & add to the DEBT the new accrued interest amount
-        updateUserCollateralCoverageRatio(userVault);
-
         // User must request to payback an amount larger than 0
         require(
             requestedRepayAmount > 0,
@@ -251,6 +255,11 @@ contract ShellDebtManager is
             IERC20(collateralAddress).balanceOf(address(msg.sender)) >= requestedRepayAmount,
             "Repay: Your balance is less than repayment request amount"
         );
+
+        UserVaultInfo storage userVault = platformUserVaults[msg.sender];
+        // Update user's collateral value to the current value according to current market prices
+        // IF the user has any DEBT, calculate & add to the DEBT the new accrued interest amount
+        updateUserCollateralCoverageRatio(userVault);
 
         uint256 amountBeingRepaid = requestedRepayAmount;
         // Check to see if the repayed amount is larger or equal than the total user debt
@@ -275,7 +284,7 @@ contract ShellDebtManager is
         // Check if user's new collateral vault specific CCR is larger than their old one
         require(
             userVault.info[collateralAddress].collateralCoverageRatio > oldCollateralCoverageRatio,
-            "Repay: new CCR should be less than previous user's CCR"
+            "Repay: new CCR should be larger than previous user's CCR"
         );
 
         // Get the reserve amount, and send it to the treasury address
