@@ -113,7 +113,7 @@ contract ShellDebtManager is
 
     function withdrawCollateral(
         address collateralAddress,
-        uint256 amountToWithdraw
+        uint256 requestedAmountToWithdraw
     )
         external
         payable
@@ -122,27 +122,25 @@ contract ShellDebtManager is
         nonReentrant
     {
         UserVaultInfo storage userVault = platformUserVaults[msg.sender];
-        uint256 currentCollateralBalance = userVault.collateralAmount[
-            collateralAddress
-        ];
+        uint256 currentCollateralBalance = userVault.info[collateralAddress].collateralAmount;
         // user's previous total collateral value
         uint256 userPrevTotalCollateralValue = userVault.totalCollateralValue;
 
         require(
-            amountToWithdraw <= currentCollateralBalance,
+            requestedAmountToWithdraw <= currentCollateralBalance,
             "Vault doesn't have the amount of collateral requested"
         );
 
         uint256 newCollateralBalance = SafeMath.sub(
             currentCollateralBalance,
-            amountToWithdraw
+            requestedAmountToWithdraw
         );
 
-        userVault.collateralAmount[collateralAddress] = newCollateralBalance;
+        userVault.info[collateralAddress].collateralAmount = newCollateralBalance;
         updateUserCollateralCoverageRatio(userVault);
 
-        // Check if user's new CCR will be below the required CCR
-        if (userVault.info[collateralAddress].collateralCoverageRatio < baseCollateralCoverageRatio) {
+        // Check if user's new CCR will be below the minimum required CCR
+        if (userVault.info[collateralAddress].collateralCoverageRatio < liquidationThresholdCCR.div(baseCollateralCoverageRatio)) {
             revert(
                 "Withdrawal: would put vault below minimum debt/collateral ratio"
             );
@@ -163,14 +161,15 @@ contract ShellDebtManager is
             collateralVault.index,
             msg.sender,
             collateralAddress,
-            amountToWithdraw
+            requestedAmountToWithdraw
         );
-        // msg.sender.transfer(amountToWithdraw);
+        // NOTE: the transfer is done by the farming strategy withdraw function above
+        // _transfer(address(this), msg.sender, requestedAmountToWithdraw);
 
         emit UserWithdrewCollateral(
             userVault.ID,
             collateralAddress,
-            amountToWithdraw
+            requestedAmountToWithdraw
         );
     }
 
@@ -181,9 +180,6 @@ contract ShellDebtManager is
         nonReentrant
     {
         UserVaultInfo storage userVault = platformUserVaults[msg.sender];
-        // Update user's collateral total value according to current market prices
-        // IF the user has any DEBT, update add the accrued interest rate to the user's DEBT
-        updateUserCollateralCoverageRatio(userVault);
 
         // User must borrow an amount larger than 0
         require(
@@ -201,31 +197,34 @@ contract ShellDebtManager is
             "SHELL: Debt ceiling hit, no more borrowing."
         );
 
+        // Update user's collateral total value according to current market prices
+        // IF the user has any DEBT, update add the accrued interest rate to the user's DEBT
+        updateUserCollateralCoverageRatio(userVault);
+
         uint256 newTotalDebtBorrowed = SafeMath.add(
-            userVault.debtBorrowedAmount,
+            userVault.info[collateralAddress].debtBorrowedAmount,
             requestedBorrowAmount
         );
+
+        // Get the new CCR according to the updated collateral value
         uint256 newCollateralCoverageRatio = getCollateralCoverageRatio(
             userVault.info[collateralAddress].collateralValue,
             newTotalDebtBorrowed
         );
-        // VaultConfig storage vault = vaultAvailable[collateralAddress];
 
+        // VaultConfig storage vault = vaultAvailable[collateralAddress];
         // Check if new CCR isn't over the base CCR, thus allow the user to borrow
-        if (newCollateralCoverageRatio < baseCollateralCoverageRatio) {
+        if (newCollateralCoverageRatio < liquidationThresholdCCR.div(baseCollateralCoverageRatio)) {
             revert(
                 "SHELL: new borrow would put vault below the min accepted CCR"
             );
         }
-        // If the new CCR is all good, set the new DC ratio for user
-        // TODO: Inform user the vault is close to the base CCR (frontend)
-        userVault.info[collateralAddress].collateralCoverageRatio = newCollateralCoverageRatio;
 
         // If all is well, let the user borrow SHELL stablecoin for use
         // Total debt borrowed is updated automatically in the SHELL smart contract
         userVault.info[collateralAddress].debtBorrowedAmount = newTotalDebtBorrowed;
 
-        // Mint & transfer SHELL borrowed to the user
+        // IF all is well, mint & transfer SHELL borrowed to the user
         _mint(msg.sender, requestedBorrowAmount);
         emit UserBorrowedDebt(userVault.ID, msg.sender, requestedBorrowAmount);
     }
@@ -341,7 +340,7 @@ contract ShellDebtManager is
         // Check to see if the user's DEBT/Collateral ratio (CCR) is above 0.95
         if (
             riskyUserVault.info[collateralAddress].collateralCoverageRatio >
-            liquidationThreshold.div(baseCollateralCoverageRatio)
+            liquidationThresholdCCR.div(baseCollateralCoverageRatio)
         ) {
             revert(
                 "buyRiskyUserVault: Vault is not below minumum debt/collateral ratio"
