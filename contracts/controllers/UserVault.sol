@@ -98,7 +98,7 @@ contract UserVault {
         UserVaultInfo storage userVault = platformUserVaults[msg.sender];
         // Ensure user's $SHELL DEBT is 0 (fully paid back)
         require(
-            userVault.debtBorrowedAmount == 0 && userVault.lastDebtUpdate == 0,
+            userVault.totalDebtBorrowedAmount == 0 && userVault.lastDebtUpdate == 0,
             "destroyUserVault: VAULT STILL HAS DEBT"
         );
         platformUserVaults[msg.sender].softDeleted = true;

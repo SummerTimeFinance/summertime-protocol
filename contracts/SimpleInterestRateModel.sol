@@ -10,8 +10,8 @@ import "./interfaces/InterestRateModel.sol";
 /// to actively calculate the right interest rate dependent on collateral vs debt utilization
 contract SimpleInterestRateModel is Ownable, InterestRateModel {
     using SafeMath for uint256;
-    // base interest rate is 0.5%
-    uint256 internal constant baseInterestRate = 5e17;
+    // base interest rate should 0.5%, will set to 0 for launch only
+    uint256 internal constant baseInterestRate = 0;
 
     // @note setting this to 0
     uint256 internal platformInterestRate = 0;
