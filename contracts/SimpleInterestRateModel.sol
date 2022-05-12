@@ -11,17 +11,19 @@ import "./interfaces/InterestRateModel.sol";
 contract SimpleInterestRateModel is Ownable, InterestRateModel {
     using SafeMath for uint256;
     // base interest rate should 0.5%, will set to 0 for launch only
-    uint256 internal constant baseInterestRate = 0;
+    uint256 internal constant BASE_INTEREST_RATE = 0;
 
     // @note setting this to 0
-    uint256 internal platformInterestRate = 0;
+    uint256 public platformInterestRate = 0;
 
     function getBorrowRate(
         uint256 totalCollateralValue,
         uint256 totalDebtBorrowed,
         uint256 reserves
     ) external override returns (uint256) {
-        return SafeMath.add(platformInterestRate, baseInterestRate);
+        uint256 protocolCurrentCCR = SafeMath.div(totalDebtBorrowed, totalCollateralValue.add(reserves));
+        uint256 newInterestRate = SafeMath.mul(protocolCurrentCCR, platformInterestRate);
+        return SafeMath.add(newInterestRate, BASE_INTEREST_RATE);
     }
 
     function getSupplyRate(
@@ -30,6 +32,8 @@ contract SimpleInterestRateModel is Ownable, InterestRateModel {
         uint256 reserves,
         uint256 reserveFactorMantissa
     ) external override returns (uint256) {
-        return SafeMath.add(0, baseInterestRate);
+        uint256 protocolCurrentCCR = SafeMath.div(totalDebtBorrowed, totalCollateralValue.add(reserves));
+        uint256 newInterestRate = SafeMath.mul(protocolCurrentCCR, platformInterestRate);
+        return SafeMath.add(newInterestRate, BASE_INTEREST_RATE);
     }
 }

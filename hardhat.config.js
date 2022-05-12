@@ -1,4 +1,5 @@
 require("@nomiclabs/hardhat-waffle");
+require('hardhat-contract-sizer');
 
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
@@ -18,7 +19,7 @@ module.exports = {
   settings: {
     optimizer: {
       enabled: true,
-      runs: 1000,
+      runs: 100,
     },
   },
   networks: {
@@ -42,5 +43,12 @@ module.exports = {
   },
   mocha: {
     timeout: 35000,
+  },
+  contractSizer: {
+    alphaSort: false,
+    disambiguatePaths: false,
+    runOnCompile: true,
+    strict: true,
+    only: [],
   }
 };

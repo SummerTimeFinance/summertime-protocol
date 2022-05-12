@@ -2,8 +2,8 @@
   "_format": "hh-sol-cache-2",
   "files": {
     "/Users/0xnumbuhfive/Documents/summertime-protocol/contracts/config/CollateralVaultConfig.sol": {
-      "lastModificationDate": 1635854322416,
-      "contentHash": "1393b7bb33ce26d91bad0fc9eed3e692",
+      "lastModificationDate": 1651155897062,
+      "contentHash": "59d9c8da156b9deedfa15f2a48e83752",
       "sourceName": "contracts/config/CollateralVaultConfig.sol",
       "solcConfig": {
         "version": "0.6.6",
@@ -108,8 +108,8 @@
       ]
     },
     "/Users/0xnumbuhfive/Documents/summertime-protocol/contracts/controllers/SummerTimeVault.sol": {
-      "lastModificationDate": 1638788084329,
-      "contentHash": "e28f6ee0962982cd63fe6ef3b78eb86d",
+      "lastModificationDate": 1651478807932,
+      "contentHash": "d127cb7c8bfeb5baaef6e2faef386ec2",
       "sourceName": "contracts/controllers/SummerTimeVault.sol",
       "solcConfig": {
         "version": "0.6.6",
@@ -138,9 +138,7 @@
         "@openzeppelin/contracts/math/SafeMath.sol",
         "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol",
         "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol",
-        "../config/GeneralVaultConfig.sol",
         "../config/CollateralVaultConfig.sol",
-        "../controllers/UserVault.sol",
         "../interfaces/FairLPPriceOracle.sol"
       ],
       "versionPragmas": [
@@ -253,7 +251,7 @@
       ]
     },
     "/Users/0xnumbuhfive/Documents/summertime-protocol/contracts/config/GeneralVaultConfig.sol": {
-      "lastModificationDate": 1635854322416,
+      "lastModificationDate": 1651131597474,
       "contentHash": "728ab4f5a2a4d295b80b130381a2a57e",
       "sourceName": "contracts/config/GeneralVaultConfig.sol",
       "solcConfig": {
@@ -289,8 +287,8 @@
       ]
     },
     "/Users/0xnumbuhfive/Documents/summertime-protocol/contracts/controllers/UserVault.sol": {
-      "lastModificationDate": 1635854322417,
-      "contentHash": "8d3b28fead00d9a2930b42bd83ddf5b7",
+      "lastModificationDate": 1651477394206,
+      "contentHash": "f976d2547fd5286aa724fd6d9aa91c45",
       "sourceName": "contracts/controllers/UserVault.sol",
       "solcConfig": {
         "version": "0.6.6",
@@ -314,7 +312,9 @@
           }
         }
       },
-      "imports": [],
+      "imports": [
+        "@openzeppelin/contracts/utils/ReentrancyGuard.sol"
+      ],
       "versionPragmas": [
         "^0.6.6"
       ],
@@ -323,7 +323,7 @@
       ]
     },
     "/Users/0xnumbuhfive/Documents/summertime-protocol/contracts/interfaces/FairLPPriceOracle.sol": {
-      "lastModificationDate": 1637929568249,
+      "lastModificationDate": 1651131649518,
       "contentHash": "331dc394acdddd2e440a88cb0d9c170f",
       "sourceName": "contracts/interfaces/FairLPPriceOracle.sol",
       "solcConfig": {
@@ -357,8 +357,8 @@
       ]
     },
     "/Users/0xnumbuhfive/Documents/summertime-protocol/contracts/tokens/SUMMER.sol": {
-      "lastModificationDate": 1635854322419,
-      "contentHash": "3bf2b3c718b09f21104dd8fab088b6e6",
+      "lastModificationDate": 1651137589449,
+      "contentHash": "edcabb0b2ce2d36d14caffba4d7e59a5",
       "sourceName": "contracts/tokens/SUMMER.sol",
       "solcConfig": {
         "version": "0.6.6",
@@ -682,8 +682,8 @@
       ]
     },
     "/Users/0xnumbuhfive/Documents/summertime-protocol/contracts/SimpleInterestRateModel.sol": {
-      "lastModificationDate": 1635854322416,
-      "contentHash": "b934d11af61493006bfa3bb0f7f88839",
+      "lastModificationDate": 1650974154277,
+      "contentHash": "8ebd4b37ed896e064ddcf898e3c5a23d",
       "sourceName": "contracts/SimpleInterestRateModel.sol",
       "solcConfig": {
         "version": "0.6.6",
@@ -720,8 +720,8 @@
       ]
     },
     "/Users/0xnumbuhfive/Documents/summertime-protocol/contracts/interfaces/InterestRateModel.sol": {
-      "lastModificationDate": 1635854322418,
-      "contentHash": "7a20334226fc3f5f2baa94b9b3571c6c",
+      "lastModificationDate": 1651134105375,
+      "contentHash": "4a82661fe08fee8c82ee0f1111810210",
       "sourceName": "contracts/interfaces/InterestRateModel.sol",
       "solcConfig": {
         "version": "0.6.6",
@@ -751,48 +751,6 @@
       ],
       "artifacts": [
         "InterestRateModel"
-      ]
-    },
-    "/Users/0xnumbuhfive/Documents/summertime-protocol/contracts/controllers/ShellDebtManager.sol": {
-      "lastModificationDate": 1638786079268,
-      "contentHash": "428721ee1cce09d4c2785964159dc84d",
-      "sourceName": "contracts/controllers/ShellDebtManager.sol",
-      "solcConfig": {
-        "version": "0.6.6",
-        "settings": {
-          "optimizer": {
-            "enabled": false,
-            "runs": 200
-          },
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [
-        "@openzeppelin/contracts/access/Ownable.sol",
-        "@openzeppelin/contracts/utils/ReentrancyGuard.sol",
-        "../config/SummerTimeCoreConfig.sol",
-        "../tokens/SHELL.sol",
-        "../interfaces/InterestRateModel.sol",
-        "../interfaces/FarmingStrategy.sol",
-        "./SummerTimeVault.sol"
-      ],
-      "versionPragmas": [
-        "^0.6.6"
-      ],
-      "artifacts": [
-        "ShellDebtManager"
       ]
     },
     "/Users/0xnumbuhfive/Documents/summertime-protocol/node_modules/@openzeppelin/contracts/utils/ReentrancyGuard.sol": {
@@ -830,8 +788,8 @@
       ]
     },
     "/Users/0xnumbuhfive/Documents/summertime-protocol/contracts/config/SummerTimeCoreConfig.sol": {
-      "lastModificationDate": 1638455680468,
-      "contentHash": "f84afb0c3d1242fcaf178191d2a3c7cf",
+      "lastModificationDate": 1651137908018,
+      "contentHash": "7ae94e0fc5e079abe72ac9d37c44b1f7",
       "sourceName": "contracts/config/SummerTimeCoreConfig.sol",
       "solcConfig": {
         "version": "0.6.6",
@@ -866,8 +824,8 @@
       ]
     },
     "/Users/0xnumbuhfive/Documents/summertime-protocol/contracts/tokens/SHELL.sol": {
-      "lastModificationDate": 1635854322419,
-      "contentHash": "1e1acab2e54033715b4c29e604f2272b",
+      "lastModificationDate": 1651137190290,
+      "contentHash": "d14a8ab148edc598d80dc92e96812caa",
       "sourceName": "contracts/tokens/SHELL.sol",
       "solcConfig": {
         "version": "0.6.6",
@@ -905,8 +863,8 @@
       ]
     },
     "/Users/0xnumbuhfive/Documents/summertime-protocol/contracts/interfaces/FarmingStrategy.sol": {
-      "lastModificationDate": 1635854322418,
-      "contentHash": "f514d7ec2832e9f3a0646dbdec441601",
+      "lastModificationDate": 1638965889084,
+      "contentHash": "a7ba3f40e4c7934e7285c0417286110c",
       "sourceName": "contracts/interfaces/FarmingStrategy.sol",
       "solcConfig": {
         "version": "0.6.6",
@@ -1009,45 +967,8 @@
         "ERC20Burnable"
       ]
     },
-    "/Users/0xnumbuhfive/Documents/summertime-protocol/contracts/SummerTimeCore.sol": {
-      "lastModificationDate": 1638790360389,
-      "contentHash": "a6aeb5a7c6ad34c74cc4afc38c4ae9d7",
-      "sourceName": "contracts/SummerTimeCore.sol",
-      "solcConfig": {
-        "version": "0.6.6",
-        "settings": {
-          "optimizer": {
-            "enabled": false,
-            "runs": 200
-          },
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [
-        "@openzeppelin/contracts/access/Ownable.sol",
-        "./controllers/ShellDebtManager.sol"
-      ],
-      "versionPragmas": [
-        "^0.6.6"
-      ],
-      "artifacts": [
-        "SummerTimeCore"
-      ]
-    },
     "/Users/0xnumbuhfive/Documents/summertime-protocol/contracts/interfaces/WBNB.sol": {
-      "lastModificationDate": 1635854322418,
+      "lastModificationDate": 1651131652074,
       "contentHash": "8afa3da53c8b072dce9f51533570a7bf",
       "sourceName": "contracts/interfaces/WBNB.sol",
       "solcConfig": {
@@ -1155,8 +1076,8 @@
       ]
     },
     "/Users/0xnumbuhfive/Documents/summertime-protocol/contracts/FarmingStrategy.sol": {
-      "lastModificationDate": 1635854322416,
-      "contentHash": "217e6c0bb6e38c6f0d443f44a54f3979",
+      "lastModificationDate": 1650991912773,
+      "contentHash": "3a4397a46ddec34fc93c0806b3c1ca94",
       "sourceName": "contracts/FarmingStrategy.sol",
       "solcConfig": {
         "version": "0.6.6",
@@ -1234,7 +1155,7 @@
       ]
     },
     "/Users/0xnumbuhfive/Documents/summertime-protocol/contracts/interfaces/IPancakeswapFarm.sol": {
-      "lastModificationDate": 1635854322418,
+      "lastModificationDate": 1651131653412,
       "contentHash": "600185d9291fc29da3d644557400969c",
       "sourceName": "contracts/interfaces/IPancakeswapFarm.sol",
       "solcConfig": {
@@ -1302,8 +1223,8 @@
       ]
     },
     "/Users/0xnumbuhfive/Documents/summertime-protocol/contracts/FairLPPriceOracle.sol": {
-      "lastModificationDate": 1637917841714,
-      "contentHash": "222db9b8e55a234eba0ebf853970bae7",
+      "lastModificationDate": 1650981359998,
+      "contentHash": "d6ea051e3298d8ca11434514df54cbeb",
       "sourceName": "contracts/FairLPPriceOracle.sol",
       "solcConfig": {
         "version": "0.6.6",
@@ -1341,8 +1262,8 @@
       ]
     },
     "/Users/0xnumbuhfive/Documents/summertime-protocol/contracts/helpers/LinkPriceOracle.sol": {
-      "lastModificationDate": 1637914946444,
-      "contentHash": "bde2dd3a0f6731e2257097a26576095f",
+      "lastModificationDate": 1638965889077,
+      "contentHash": "88f620495370fa223a0e41a197fce33b",
       "sourceName": "contracts/helpers/LinkPriceOracle.sol",
       "solcConfig": {
         "version": "0.6.6",
@@ -1482,7 +1403,7 @@
       ]
     },
     "/Users/0xnumbuhfive/Documents/summertime-protocol/contracts/interfaces/MasterChef.sol": {
-      "lastModificationDate": 1635854322418,
+      "lastModificationDate": 1651131652736,
       "contentHash": "91bbbbd8dcc7ceb909cb552f47e5db9e",
       "sourceName": "contracts/interfaces/MasterChef.sol",
       "solcConfig": {
@@ -1513,6 +1434,122 @@
       ],
       "artifacts": [
         "MasterChef"
+      ]
+    },
+    "/Users/0xnumbuhfive/Documents/summertime-protocol/contracts/ShellDebtManager.sol": {
+      "lastModificationDate": 1651479664533,
+      "contentHash": "852193272a3e5400c791384d662c59b1",
+      "sourceName": "contracts/ShellDebtManager.sol",
+      "solcConfig": {
+        "version": "0.6.6",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/access/Ownable.sol",
+        "@openzeppelin/contracts/utils/ReentrancyGuard.sol",
+        "@openzeppelin/contracts/token/ERC20/SafeERC20.sol",
+        "./config/SummerTimeCoreConfig.sol",
+        "./controllers/SummerTimeCore.sol",
+        "./controllers/UserVault.sol",
+        "./tokens/SHELL.sol",
+        "./interfaces/SummerTimeVaults.sol",
+        "./interfaces/InterestRateModel.sol",
+        "./interfaces/FarmingStrategy.sol"
+      ],
+      "versionPragmas": [
+        "^0.6.6"
+      ],
+      "artifacts": [
+        "ShellDebtManager"
+      ]
+    },
+    "/Users/0xnumbuhfive/Documents/summertime-protocol/contracts/controllers/SummerTimeCore.sol": {
+      "lastModificationDate": 1651479523633,
+      "contentHash": "5f057294e80b1d5aacbfc8c8fdfd6a06",
+      "sourceName": "contracts/controllers/SummerTimeCore.sol",
+      "solcConfig": {
+        "version": "0.6.6",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/access/Ownable.sol",
+        "../config/SummerTimeCoreConfig.sol"
+      ],
+      "versionPragmas": [
+        "^0.6.6"
+      ],
+      "artifacts": [
+        "SummerTimeCore"
+      ]
+    },
+    "/Users/0xnumbuhfive/Documents/summertime-protocol/contracts/interfaces/SummerTimeVaults.sol": {
+      "lastModificationDate": 1651477601128,
+      "contentHash": "5777b568e79e894f1a541d627e28aad1",
+      "sourceName": "contracts/interfaces/SummerTimeVaults.sol",
+      "solcConfig": {
+        "version": "0.6.6",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.6.6"
+      ],
+      "artifacts": [
+        "SummerTimeVault"
       ]
     }
   }

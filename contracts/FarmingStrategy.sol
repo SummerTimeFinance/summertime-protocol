@@ -40,7 +40,7 @@ contract FarmingStrategy is Ownable, ReentrancyGuard {
     uint256 public performanceFeePercentage = 450; // 4.5%
     uint256 public buyBackPercentage = 0;
     uint256 public slippageFactor = 9500; // 5% default slippage tolerance
-    uint256 internal constant oneHunderedPercent = 10000; // 100 = 1%
+    uint256 internal constant ONE_HUNDRED_PERCENT = 10000; // 100 = 1%
 
     uint256 public lastEarnBlock = 0;
 
@@ -63,7 +63,7 @@ contract FarmingStrategy is Ownable, ReentrancyGuard {
         address _uniswapLikeRouterAddress,
         address _performanceFeeCollectingAddress,
         address _buyBackSummerTimeDaoAddress
-    ) internal {
+    ) public {
         require(
             _summerTimeToken != address(0),
             "_summerTimeToken cannot be nil or blackhole address"
@@ -97,19 +97,33 @@ contract FarmingStrategy is Ownable, ReentrancyGuard {
         summerTimeToken = _summerTimeToken;
         collateralFarmingContracts.push(_farmingContract);
         tokenBeingYieldFarmed[_farmingContract] = _tokenBeingEarned;
+        uniswapLikeRouterAddress = _uniswapLikeRouterAddress;
+        performanceFeeCollectingAddress = _performanceFeeCollectingAddress;
+        buyBackSummerTimeDaoAddress = _buyBackSummerTimeDaoAddress;
     }
 
-    function addFarmingContract(address _farmingContract)
+    function addFarmingContract(address _farmingContract, address _tokenBeingEarned)
         public
         onlyOwner
         nonReentrant
     {
         require(
             _farmingContract != address(0),
-            "farming contract cannot be nil or blackhole address"
+            "_farmingContract cannot be nil or blackhole address"
+        );
+
+        require(
+            _tokenBeingEarned != address(0),
+            "_tokenBeingEarned cannot be nil or blackhole address"
+        );
+
+        require(
+            tokenBeingYieldFarmed[_farmingContract] == address(0),
+            'Add: Farming/MasterChef contract already added'
         );
 
         collateralFarmingContracts.push(_farmingContract);
+        tokenBeingYieldFarmed[_farmingContract] = _tokenBeingEarned;
     }
 
     function addCollateral(address collateralAddress, uint256 collateralPoolID)
@@ -122,7 +136,7 @@ contract FarmingStrategy is Ownable, ReentrancyGuard {
             "collateral address can not be nil or blackhole address"
         );
         uint256 poolID = collateralPoolIDs[collateralAddress];
-        // Check to see if the poolID hadn't been set before
+        // Check to see if the poolID hadn't been set before, and add it
         if (poolID == 0) {
             collateralPoolIDs[collateralAddress] = collateralPoolID;
         }
@@ -152,7 +166,7 @@ contract FarmingStrategy is Ownable, ReentrancyGuard {
         uint256 farmIndex,
         address collateralAddress,
         uint256 depositAmount
-    ) internal virtual {
+    ) virtual internal {
         // Get the correct farm, for now it should be just 0, for PCS
         address farmingContract = collateralFarmingContracts[farmIndex];
         IERC20(collateralAddress).safeIncreaseAllowance(
@@ -173,7 +187,7 @@ contract FarmingStrategy is Ownable, ReentrancyGuard {
         uint256 farmIndex,
         address collateralAddress,
         uint256 withdrawAmount
-    ) internal virtual {
+    ) virtual internal {
         address farmingContract = collateralFarmingContracts[farmIndex];
         uint256 pid = collateralPoolIDs[collateralAddress];
 
@@ -187,7 +201,7 @@ contract FarmingStrategy is Ownable, ReentrancyGuard {
         address userAddress,
         address collateralAddress,
         uint256 withdrawAmount
-    ) public virtual onlyOwner nonReentrant returns (uint256) {
+    ) virtual public onlyOwner nonReentrant returns (uint256) {
         require(withdrawAmount > 0, "withdrawAmount <= 0");
 
         // Check to see if the amount to withdraw is larger than what the user had staked
@@ -318,7 +332,7 @@ contract FarmingStrategy is Ownable, ReentrancyGuard {
         if (amountEarned > 0 && performanceFeePercentage > 0) {
             uint256 performanceFee = amountEarned
                 .mul(performanceFeePercentage)
-                .div(oneHunderedPercent);
+                .div(ONE_HUNDRED_PERCENT);
             IERC20(tokenBeingEarned).safeTransfer(
                 performanceFeeCollectingAddress,
                 performanceFee
@@ -333,7 +347,7 @@ contract FarmingStrategy is Ownable, ReentrancyGuard {
     function deductBuyBackFee(address tokenBeingEarned, uint256 amountEarned) internal returns (uint256) {
         if (amountEarned > 0 && buyBackPercentage > 0) {
             uint256 buybackFeeAmount = amountEarned.mul(buyBackPercentage).div(
-                oneHunderedPercent
+                ONE_HUNDRED_PERCENT
             );
             IERC20(tokenBeingEarned).safeIncreaseAllowance(
                 uniswapLikeRouterAddress,
@@ -366,14 +380,14 @@ contract FarmingStrategy is Ownable, ReentrancyGuard {
         address[] memory _path,
         address _to,
         uint256 _deadline
-    ) internal virtual {
+    ) virtual internal {
         IUniswapV2Router02 ammSwap = IUniswapV2Router02(_uniRouterAddress);
         uint256[] memory amounts = ammSwap.getAmountsOut(_amountIn, _path);
         uint256 amountOut = amounts[amounts.length.sub(1)];
 
         ammSwap.swapExactTokensForTokensSupportingFeeOnTransferTokens(
             _amountIn,
-            amountOut.mul(_slippageFactor).div(oneHunderedPercent),
+            amountOut.mul(_slippageFactor).div(ONE_HUNDRED_PERCENT),
             _path,
             _to,
             _deadline
