@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: BSL1.1
 pragma solidity ^0.6.6;
 
-contract UserVault {
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+
+contract UserVault is ReentrancyGuard {
     // VAULT ID count will start at 100,000
     uint256 private vaultIDCount = 100000;
 
@@ -28,13 +30,13 @@ contract UserVault {
         bool softDeleted;
     }
 
-    mapping(address => UserVaultInfo) internal platformUserVaults;
+    mapping(address => UserVaultInfo) internal userVaults;
     address[] internal vaultCurrentUsers;
 
     modifier onlyVaultOwner(address vaultOwner) {
-        UserVaultInfo memory userVault = platformUserVaults[msg.sender];
+        UserVaultInfo memory userVault = userVaults[msg.sender];
         if (vaultOwner != address(0)) {
-            userVault = platformUserVaults[vaultOwner];
+            userVault = userVaults[vaultOwner];
         }
         require(
             userVault.ID != 0 || userVault.softDeleted != true,
@@ -44,7 +46,7 @@ contract UserVault {
     }
 
     function createUserVault(address userAddress)
-        external
+        internal
         returns (uint256 createdVaultId)
     {
         bool userVaultUnarchived = false;
@@ -53,7 +55,7 @@ contract UserVault {
             vaultOwnerAddress = msg.sender;
         }
         // Check if the user has already created a vault with us
-        UserVaultInfo storage userVault = platformUserVaults[vaultOwnerAddress];
+        UserVaultInfo storage userVault = userVaults[vaultOwnerAddress];
         require(
             userVault.ID == 0 && userVault.softDeleted == false,
             "createUserVault: VAULT EXISTS"
@@ -80,41 +82,72 @@ contract UserVault {
 
     function transferUserVault(address newVaultOwnerAddress)
         external
-        virtual
         onlyVaultOwner(msg.sender)
+        nonReentrant
         returns (uint256)
     {
-        // Overridden (defined well) in ShellDebtManager.sol contract
-        // that inherits it from SummerTimeVault contract
-        (uint256 x, uint256 y) = (100, 100);
-        return x - y;
+        UserVaultInfo storage previousUserVault = userVaults[
+            msg.sender
+        ];
+        // updateUserCollateralCoverageRatio(previousUserVault);
+
+        UserVaultInfo storage nextUserVault = userVaults[
+            newVaultOwnerAddress
+        ];
+        // Check to see if the new owner already has a vault
+        if (nextUserVault.ID > 0) {
+            revert("Transfer: msg.sender(address) already has an active vault");
+        }
+
+        // If the new user doesn't have a vault, create one and do the trenasfer;
+        createUserVault(newVaultOwnerAddress);
+        nextUserVault = userVaults[newVaultOwnerAddress];
+
+        // Save the IDs into the memory, so that they are set back to what they were
+        uint256 nextVaultOwnerID = nextUserVault.ID;
+        uint256 previousVaultOwnerID = previousUserVault.ID;
+
+        // Swap the properties of the vaults, to reset the previous one
+        (nextUserVault, previousUserVault) = (previousUserVault, nextUserVault);
+        nextUserVault.ID = nextVaultOwnerID;
+        previousUserVault.ID = previousVaultOwnerID;
+
+        emit UserVaultTransfered(
+            msg.sender,
+            newVaultOwnerAddress,
+            nextUserVault.totalCollateralValue,
+            nextUserVault.totalDebtBorrowedAmount
+        );
+        return nextVaultOwnerID;
     }
 
     function destroyUserVault()
         external
         onlyVaultOwner(msg.sender)
+        nonReentrant
         returns (uint256, bool)
     {
-        UserVaultInfo storage userVault = platformUserVaults[msg.sender];
+        UserVaultInfo storage userVault = userVaults[msg.sender];
         // Ensure user's $SHELL DEBT is 0 (fully paid back)
         require(
-            userVault.debtBorrowedAmount == 0 && userVault.lastDebtUpdate == 0,
-            "destroyUserVault: VAULT STILL HAS DEBT"
+            userVault.totalDebtBorrowedAmount == 0 && userVault.totalCollateralValue == 0,
+            "destroyUserVault: Still has DEBT or COLLATERAL"
         );
-        platformUserVaults[msg.sender].softDeleted = true;
+        userVaults[msg.sender].softDeleted = true;
         emit UserVaultDestroyed(userVault.ID, msg.sender);
         return (userVault.ID, true);
     }
 
     event UserVaultCreated(
         uint256 newVaultID,
-        address vaultOwnerAddress,
+        address vaultOwner,
         bool unarchived
     );
     event UserVaultTransfered(
-        uint256 vaultID,
-        address oldVaultOwnerAddress,
-        address newVaultOwnerAddress
+        address previousVaultOwner,
+        address nextVaultOwner,
+        uint256 collateralAmount,
+        uint256 debtBorrowedAmount
     );
-    event UserVaultDestroyed(uint256 vauldID, address vaultOwnerAddress);
+    event UserVaultDestroyed(uint256 vauldID, address vaultOwner);
 }

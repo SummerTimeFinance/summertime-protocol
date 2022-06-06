@@ -2,21 +2,13 @@
 pragma solidity ^0.6.6;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./controllers/ShellDebtManager.sol";
 
-contract SummerTimeCore is Ownable, ShellDebtManager {
-    constructor(
-        address fairLPPriceOracle,
-        address interestRateModel,
-        address farmingStrategyAddress
-    )
-        internal
-        ShellDebtManager(
-            fairLPPriceOracle,
-            interestRateModel,
-            farmingStrategyAddress
-        )
-    {}
+import "../config/SummerTimeCoreConfig.sol";
+
+contract SummerTimeCore is Ownable, SummerTimeCoreConfig {
+    constructor() public {
+        deployedDateTime = block.timestamp;
+    }
 
     function updatePlatformStabilityPoolAddress(
         address newPlatformStabilityPool
@@ -35,8 +27,7 @@ contract SummerTimeCore is Ownable, ShellDebtManager {
         returns (bool)
     {
         require(
-            newDebtCeilingAmount > 0 &&
-                newDebtCeilingAmount > summerTimeDebtCeiling,
+            newDebtCeilingAmount > 0 && newDebtCeilingAmount > summerTimeDebtCeiling,
             "newDebtCeilingAmount must be an amount larger than 0 and summerTimeDebtCeiling"
         );
         summerTimeDebtCeiling = newDebtCeilingAmount;

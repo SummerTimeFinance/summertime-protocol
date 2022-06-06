@@ -3,36 +3,58 @@ pragma solidity ^0.6.6;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
-import "../config/SummerTimeCoreConfig.sol";
-import "../tokens/SHELL.sol";
-import "../interfaces/InterestRateModel.sol";
-import "../interfaces/FarmingStrategy.sol";
+import "./config/SummerTimeCoreConfig.sol";
+import "./controllers/SummerTimeCore.sol";
+import "./controllers/UserVault.sol";
 
-import "./SummerTimeVault.sol";
+import "./tokens/SHELL.sol";
+
+import "./interfaces/SummerTimeVaults.sol";
+import "./interfaces/InterestRateModel.sol";
+import "./interfaces/FarmingStrategy.sol";
 
 contract ShellDebtManager is
     Ownable,
     ReentrancyGuard,
-    SummerTimeCoreConfig,
-    SummerTimeVault,
+    SummerTimeCore,
+    UserVault,
     ShellStableCoin
 {
-    /// @dev the interest rate model contract used to depict the interest rate
-    InterestRateModel internal platformInterestRateModel;
-    FarmingStrategy internal farmingStrategy;
+    using SafeERC20 for IERC20;
+    // @dev the interest rate model contract used to depict the interest rate
+    InterestRateModel platformInterestRateModel;
+    FarmingStrategy farmingStrategy;
+    SummerTimeVault summerTimeVaults;
+
+    // Check to see if any of the collateral being deposited by the user
+    // is an accepted collateral by the protocol
+    modifier isCollateralAvailable(address collateralAddress) {
+        bool collateralExists = false;
+        SummerTimeVault.VaultConfig memory collateralVault = summerTimeVaults.getCollateralVaultInfo(
+            collateralAddress
+        );
+        if (collateralVault.token0 != address(0)) {
+            collateralExists = true;
+        }
+
+        require(
+            collateralExists,
+            "isCollateralAvailable: COLLATERAL not available to borrow against."
+        );
+        // require(collateralAddress != address(0), "Address is not blackhole address");
+        _;
+    }
 
     // @dev constructor will initialize SHELL with a cap (debt ceiling) of $100,000
-    // @param uint: summerTimeDebtCeiling (global config variable)
-    // @param address: _uniswapFactoryAddress this is PancakeSwap's LP Factory address
     constructor(
-        address fairLPPriceOracle,
+        address summerTimeVaultsAddress,
         address interestRateModel,
         address farmingStrategyAddress
     )
         internal
         ShellStableCoin(summerTimeDebtCeiling)
-        SummerTimeVault(fairLPPriceOracle)
     {
         require(
             interestRateModel != address(0),
@@ -41,6 +63,7 @@ contract ShellDebtManager is
         // TODO: Create the treasury vault, to absorb liquidation collateral fee
         // And also to absorb & hold other supported assets such as USDC
         platformTreasuryAdminAddress = msg.sender;
+        summerTimeVaults = SummerTimeVault(summerTimeVaultsAddress);
         platformInterestRateModel = InterestRateModel(interestRateModel);
         farmingStrategy = FarmingStrategy(farmingStrategyAddress);
     }
@@ -48,11 +71,11 @@ contract ShellDebtManager is
     function depositCollateral(address collateralAddress)
         external
         payable
-        collateralAccepted(collateralAddress)
+        isCollateralAvailable(collateralAddress)
         onlyVaultOwner(msg.sender)
         nonReentrant
     {
-        UserVaultInfo storage userVault = platformUserVaults[msg.sender];
+        UserVaultInfo storage userVault = userVaults[msg.sender];
 
         // Check to see if depositing is disabled globally
         require(
@@ -75,23 +98,18 @@ contract ShellDebtManager is
         // Update the user's current collateral amount & value
         userVault.info[collateralAddress].collateralAmount = newCollateralAmount;
 
-        // @TIP: Assignments between storage and memory
-        // (or from calldata) always create an independent copy.
+        // @TIP: Assignments between storage and memory (or from calldata) always create an independent copy.
         uint256 previousUserCollateralValue = userVault.totalCollateralValue;
         // Update user's collateral total value to the current value according to current market prices
         // IF the user has any DEBT, calculate & add to the DEBT the new accrued interest amount
         updateUserCollateralCoverageRatio(userVault);
 
-        platformTotalCollateralValue = SafeMath.sub(
-            platformTotalCollateralValue,
-            previousUserCollateralValue
-        );
         platformTotalCollateralValue = SafeMath.add(
-            platformTotalCollateralValue,
+            SafeMath.sub(platformTotalCollateralValue, previousUserCollateralValue),
             userVault.totalCollateralValue
         );
 
-        VaultConfig storage collateralVault = vaultAvailable[collateralAddress];
+        SummerTimeVault.VaultConfig memory collateralVault = summerTimeVaults.getCollateralVaultInfo(collateralAddress);
         // NOTE: the farming strategy can be a dummy one to only be used to
         // hold funds safely in another address, not exactly yeild farm any tokens
         // Move the user's amount from their wallet to the collateral's farming strategy
@@ -114,26 +132,24 @@ contract ShellDebtManager is
     )
         external
         payable
-        collateralAccepted(collateralAddress)
+        isCollateralAvailable(collateralAddress)
         onlyVaultOwner(msg.sender)
         nonReentrant
     {
-        UserVaultInfo storage userVault = platformUserVaults[msg.sender];
-        uint256 currentCollateralBalance = userVault.info[collateralAddress].collateralAmount;
+        UserVaultInfo storage userVault = userVaults[msg.sender];
         // user must withdraw amount equal to or less than their collateral vault balance
         require(
-            requestedAmountToWithdraw <= currentCollateralBalance,
+            requestedAmountToWithdraw <= userVault.info[collateralAddress].collateralAmount,
             "Withdraw: vault doesn't have the amount of collateral requested"
         );
 
         uint256 newCollateralBalance = SafeMath.sub(
-            currentCollateralBalance,
+            userVault.info[collateralAddress].collateralAmount,
             requestedAmountToWithdraw
         );
-        uint256 collateralFairLPPrice = this.fetchCollateralPrice(
-            collateralAddress
+        uint256 newCollateralValue = newCollateralBalance.mul(
+            summerTimeVaults.getCurrentFairLPTokenPrice(collateralAddress)
         );
-        uint256 newCollateralValue = newCollateralBalance.mul(collateralFairLPPrice);
 
         // Get the new CCR according to the updated collateral value
         uint256 newCollateralCoverageRatio = getCollateralCoverageRatio(
@@ -142,7 +158,7 @@ contract ShellDebtManager is
         );
 
         // Check if user's new CCR will be below the minimum required CCR
-        if (newCollateralCoverageRatio < liquidationThresholdCCR.div(baseCollateralCoverageRatio)) {
+        if (newCollateralCoverageRatio < liquidationThresholdCCR.div(BASE_COLLATERAL_COVERAGE_RATIO)) {
             revert(
                 "Withdrawal: would put vault below minimum debt/collateral ratio"
             );
@@ -152,19 +168,17 @@ contract ShellDebtManager is
         userVault.info[collateralAddress].collateralAmount = newCollateralBalance;
         // user's previous total collateral value
         uint256 userPrevTotalCollateralValue = userVault.totalCollateralValue;
-        // Update user's collateral total value according to current market prices
-        // IF the user has any DEBT, update add the accrued interest rate to the user's DEBT
         updateUserCollateralCoverageRatio(userVault);
-        platformTotalCollateralValue = SafeMath.sub(
-            platformTotalCollateralValue,
-            userPrevTotalCollateralValue
-        );
+
         platformTotalCollateralValue = SafeMath.add(
-            platformTotalCollateralValue,
+            SafeMath.sub(
+                platformTotalCollateralValue,
+                userPrevTotalCollateralValue
+            ),
             userVault.totalCollateralValue
         );
 
-        VaultConfig storage collateralVault = vaultAvailable[collateralAddress];
+        SummerTimeVault.VaultConfig memory collateralVault = summerTimeVaults.getCollateralVaultInfo(collateralAddress);
         // now send the amount to the vault owner's address
         farmingStrategy.withdraw(
             collateralVault.index,
@@ -172,8 +186,6 @@ contract ShellDebtManager is
             collateralAddress,
             requestedAmountToWithdraw
         );
-        // NOTE: the transfer is done by the farming strategy withdraw function above
-        // _transfer(address(this), msg.sender, requestedAmountToWithdraw);
 
         emit UserWithdrewCollateral(
             userVault.ID,
@@ -184,7 +196,7 @@ contract ShellDebtManager is
 
     function borrowShellStableCoin(address collateralAddress, uint256 requestedBorrowAmount)
         external
-        collateralAccepted(collateralAddress)
+        isCollateralAvailable(collateralAddress)
         onlyVaultOwner(msg.sender)
         nonReentrant
     {
@@ -204,9 +216,7 @@ contract ShellDebtManager is
             "SHELL: Must borrow an amount above 0"
         );
 
-        UserVaultInfo storage userVault = platformUserVaults[msg.sender];
-        // Update user's collateral total value according to current market prices
-        // IF the user has any DEBT, update add the accrued interest rate to the user's DEBT
+        UserVaultInfo storage userVault = userVaults[msg.sender];
         updateUserCollateralCoverageRatio(userVault);
 
         uint256 newTotalDebtBorrowed = SafeMath.add(
@@ -220,26 +230,23 @@ contract ShellDebtManager is
             newTotalDebtBorrowed
         );
 
-        // VaultConfig storage vault = vaultAvailable[collateralAddress];
         // Check if new CCR isn't over the base CCR, thus allow the user to borrow
-        if (newCollateralCoverageRatio < liquidationThresholdCCR.div(baseCollateralCoverageRatio)) {
+        if (newCollateralCoverageRatio < liquidationThresholdCCR.div(BASE_COLLATERAL_COVERAGE_RATIO)) {
             revert(
                 "SHELL: new borrow would put vault below the min accepted CCR"
             );
         }
 
         // If all is well, let the user borrow SHELL stablecoin for use
-        // Total debt borrowed is updated automatically in the SHELL smart contract
         userVault.info[collateralAddress].debtBorrowedAmount = newTotalDebtBorrowed;
-
-        // IF all is well, mint & transfer SHELL borrowed to the user
         _mint(msg.sender, requestedBorrowAmount);
+
         emit UserBorrowedDebt(userVault.ID, msg.sender, requestedBorrowAmount);
     }
 
     function repayShellStablecoinDebt(address collateralAddress, uint256 requestedRepayAmount)
         external
-        collateralAccepted(collateralAddress)
+        isCollateralAvailable(collateralAddress)
         onlyVaultOwner(msg.sender)
         nonReentrant
     {
@@ -255,9 +262,7 @@ contract ShellDebtManager is
             "Repay: Your balance is less than repayment request amount"
         );
 
-        UserVaultInfo storage userVault = platformUserVaults[msg.sender];
-        // Update user's collateral value to the current value according to current market prices
-        // IF the user has any DEBT, calculate & add to the DEBT the new accrued interest amount
+        UserVaultInfo storage userVault = userVaults[msg.sender];
         updateUserCollateralCoverageRatio(userVault);
 
         uint256 amountBeingRepaid = requestedRepayAmount;
@@ -268,9 +273,6 @@ contract ShellDebtManager is
         // IF IT IS, only deduct the DEBT owed, and send back the rest to the user
         if (amountBeingRepaid >= userCurrentDebtBorrowed) {
             amountBeingRepaid = userCurrentDebtBorrowed;
-            // remainderAmount = amountBeingRepaid.sub(userVault.debtBorrowedAmount);
-            // Send back the SHELL balance that was left after paying the DEBT
-            // _transfer(address(this), msg.sender, remainderAmount);
         }
 
         uint256 newDebtBorrowedAmount = SafeMath.sub(
@@ -314,15 +316,13 @@ contract ShellDebtManager is
         emit UserRepayedDebt(userVault.ID, msg.sender, amountBeingRepaid);
     }
 
-    // A user's collateral coverage ratio in each collateral vault should be above or equal to 0.95
-    // If one of the user's collateral vault's is below it, it is susceptible to being partially liquidated
+    // If one of the user's vault CCR is below 0.95, it is susceptible to being partially liquidated
     function buyRiskyUserVault(address collateralAddress, address userVaultAddress)
         external
-        collateralAccepted(collateralAddress)
+        isCollateralAvailable(collateralAddress)
         nonReentrant
     {
         // Check to see if the platformStabilityPool is provided
-        // IF provided, ensure the liquidator is the platformStabilityPool address
         if (
             platformStabilityPool != address(0) &&
             msg.sender == platformStabilityPool
@@ -330,12 +330,12 @@ contract ShellDebtManager is
             revert("buyRiskyVault: disabled for the community");
         }
 
-        UserVaultInfo storage liquidatorVault = platformUserVaults[msg.sender];
+        UserVaultInfo storage liquidatorVault = userVaults[msg.sender];
         if (liquidatorVault.ID == 0) {
             revert("buyRiskyUserVault: liquidator vault doesn't exist");
         }
 
-        UserVaultInfo storage riskyUserVault = platformUserVaults[
+        UserVaultInfo storage riskyUserVault = userVaults[
             userVaultAddress
         ];
         // Check if the vault exists
@@ -343,17 +343,15 @@ contract ShellDebtManager is
             revert("buyRiskyUserVault: user vault doesn't exist");
         }
 
-        // Update user's collateral value to the current value according to current market prices
-        // IF the user has any DEBT, calculate & add to the DEBT the new accrued interest amount
         updateUserCollateralCoverageRatio(riskyUserVault);
 
         // Check to see if the user's DEBT/Collateral ratio (CCR) is above 0.95
         if (
             riskyUserVault.info[collateralAddress].collateralCoverageRatio >
-            liquidationThresholdCCR.div(baseCollateralCoverageRatio)
+            liquidationThresholdCCR.div(BASE_COLLATERAL_COVERAGE_RATIO)
         ) {
             revert(
-                "buyRiskyUserVault: Vault is not below minumum debt/collateral ratio"
+                "buyRiskyUserVault: Vault is not below minumum CCR"
             );
         }
 
@@ -370,7 +368,6 @@ contract ShellDebtManager is
         // Now burn the SHELL tokens that the liquidator offered to pay the debt
         _burn(msg.sender, debtAmountToBePaid);
 
-        // This is where we partially liquidate the user's vault
         // Take 4/9th's of the collateral and sell it to pay back the debt
         // Apply the liquidationIncentive & liquidationFee (10% and 0.5%)
         uint256 collateralToClaim = SafeMath.mul(
@@ -378,7 +375,7 @@ contract ShellDebtManager is
             SafeMath.add(uint256(1), liquidationIncentive.div(100e18))
         );
 
-        UserVaultInfo storage treasuryVault = platformUserVaults[
+        UserVaultInfo storage treasuryVault = userVaults[
             platformTreasuryAdminAddress
         ];
 
@@ -388,11 +385,8 @@ contract ShellDebtManager is
             collateralToClaim
         );
 
-
-        // TODO: Make sure to bootstrap treasury vault in constructor
-        // Move 0.5% collateral to be liquidated to our treasury vault
         if (treasuryVault.ID != 0) {
-            // revert("buyRiskyUserVault: treasury vault doesn't exist");
+            // Move 0.5% collateral to be liquidated to our treasury vault
             treasuryVault.info[collateralAddress].collateralAmount = SafeMath
                 .add(
                     treasuryVault.info[collateralAddress].collateralAmount,
@@ -402,7 +396,6 @@ contract ShellDebtManager is
                     )
                 );
         }
-
 
         // Move the collateral to be liquidated to the liquidator vault
         liquidatorVault.info[collateralAddress].collateralAmount = SafeMath.add(
@@ -416,142 +409,6 @@ contract ShellDebtManager is
             debtAmountToBePaid,
             msg.sender
         );
-    }
-
-    function transferUserVault(address newVaultOwnerAddress)
-        external
-        override(UserVault)
-        onlyVaultOwner(msg.sender)
-        nonReentrant
-        returns (uint256)
-    {
-        UserVaultInfo storage previousUserVault = platformUserVaults[
-            msg.sender
-        ];
-        // Update user's collateral value to the current value according to current market prices
-        // IF the user has any DEBT, calculate & add to the DEBT the new accrued interest amount
-        updateUserCollateralCoverageRatio(previousUserVault);
-
-        UserVaultInfo storage nextUserVault = platformUserVaults[
-            newVaultOwnerAddress
-        ];
-        // Check to see if the new owner already has a vault
-        if (nextUserVault.ID > 0) {
-            revert("Transfer: msg.sender(address) already has an active vault");
-        }
-
-        // If the new user doesn't have a vault, create one and do the trenasfer;
-        this.createUserVault(newVaultOwnerAddress);
-        nextUserVault = platformUserVaults[newVaultOwnerAddress];
-
-        // Save the IDs into the memory, so that they are set back to what they were
-        uint256 nextVaultOwnerID = nextUserVault.ID;
-        uint256 previousVaultOwnerID = previousUserVault.ID;
-
-        // Swap the properties of the vaults, to reset the previous one
-        // and pass all the previous vault information into the next one
-        (nextUserVault, previousUserVault) = (previousUserVault, nextUserVault);
-        nextUserVault.ID = nextVaultOwnerID;
-        previousUserVault.ID = previousVaultOwnerID;
-
-        emit UserTransferredVault(
-            msg.sender,
-            newVaultOwnerAddress,
-            nextUserVault.totalCollateralValue,
-            nextUserVault.debtBorrowedAmount
-        );
-        return nextVaultOwnerID;
-    }
-
-    function updateUserCollateralValue(UserVaultInfo storage userVault)
-        internal
-        returns (uint256)
-    {
-        // reset user totalCollateralValue to 0
-        uint256 userTotalCollateralValue = userVault.totalCollateralValue;
-
-        // @info LOOP thru each available collateral getting the user's collateral amount
-        // Use that amount to calculate their current total collateral value according
-        // to the new price for each LP collateral
-        for (
-            uint256 index = 0;
-            index < vaultCollateralAddresses.length;
-            index++
-        ) {
-            address collateralAddress = vaultCollateralAddresses[index];
-            uint256 collateralAmount = userVault.info[collateralAddress].collateralAmount;
-            if (collateralAmount > 0) {
-                uint256 collateralFairLPPrice = this.fetchCollateralPrice(
-                    collateralAddress
-                );
-                userVault.info[collateralAddress].collateralValue = collateralAmount.mul(collateralFairLPPrice);
-                userTotalCollateralValue = SafeMath.add(
-                    userVault.totalCollateralValue,
-                    userVault.info[collateralAddress].collateralValue
-                );
-            }
-        }
-
-        userVault.totalCollateralValue = userTotalCollateralValue;
-        return userVault.totalCollateralValue;
-    }
-
-    function updateUsersDebtValue(UserVaultInfo storage userVault)
-        internal
-        returns (uint256)
-    {
-        // the time past since last debt accrued update (in seconds)
-        uint256 currentTimestamp = block.timestamp;
-        uint256 newTotalDebtBorrowedAmount = 0;
-        uint256 currentInterestPerSecond = perSecondInterestRate(
-            platformInterestRateModel.getBorrowRate(
-                platformTotalCollateralValue,
-                // The SHELL supply units is also the platform's total debt value
-                totalSupply(),
-                platformTotalReserves
-            )
-        );
-
-        // @info LOOP thru each available collateral getting the user's collateral amount
-        // Use that amount to calculate their current total collateral value according
-        // to the new price for each LP collateral
-        for (
-            uint256 index = 0;
-            index < vaultCollateralAddresses.length;
-            index++
-        ) {
-            address collateralAddress = vaultCollateralAddresses[index];
-            uint256 debtBorrowedAmount = userVault.info[collateralAddress].debtBorrowedAmount;
-
-            if (debtBorrowedAmount > 0) {
-                uint256 timeDifference = uint256(
-                    currentTimestamp - userVault.info[collateralAddress].lastDebtUpdate
-                );
-                uint256 interestRateToBeApplied = timeDifference.mul(currentInterestPerSecond);
-                uint256 accruedInterest = SafeMath.mul(
-                    userVault.info[collateralAddress].debtBorrowedAmount,
-                    interestRateToBeApplied
-                );
-
-                // Update user's current DEBT amount
-                uint256 newBorrowedDebtAmount = SafeMath.add(
-                    userVault.info[collateralAddress].debtBorrowedAmount,
-                    accruedInterest
-                );
-                // TIP: Should be assert, using require to see issues faster
-                require(
-                    newBorrowedDebtAmount > debtBorrowedAmount,
-                    "Deposit: new debtBorrowedAmount can not be less than the previous one"
-                );
-                userVault.info[collateralAddress].debtBorrowedAmount = newBorrowedDebtAmount;
-                newTotalDebtBorrowedAmount = newTotalDebtBorrowedAmount.add(newBorrowedDebtAmount);
-                // Don't forget to update the lastDebtUpdate timestamp
-                userVault.info[collateralAddress].lastDebtUpdate = currentTimestamp;
-            }
-        }
-
-        userVault.totalDebtBorrowedAmount = newTotalDebtBorrowedAmount;
-        return newTotalDebtBorrowedAmount;
     }
 
     function updateUserCollateralCoverageRatio(UserVaultInfo storage userVault)
@@ -571,74 +428,78 @@ contract ShellDebtManager is
 
         uint256 newTotalDebtBorrowedAmount = 0;
         uint256 newTotalCollateralValue = userVault.totalCollateralValue;
-        uint256 currentUserVaultCCRs = baseCollateralCoverageRatio;
+        uint256 currentUserVaultCCRs = BASE_COLLATERAL_COVERAGE_RATIO;
+        address[] memory collateralVaultAddresses = summerTimeVaults.getCollateralVaultAddresses();
 
         // @info LOOP thru each available collateral getting the user's collateral amount
         // Use that amount to calculate their current total collateral value according
         // to the new price for each LP collateral
         for (
             uint256 index = 0;
-            index < vaultCollateralAddresses.length;
+            index < collateralVaultAddresses.length;
             index++
         ) {
-            address collateralAddress = vaultCollateralAddresses[index];
-            uint256 collateralAmount = userVault.info[collateralAddress].collateralAmount;
-            uint256 debtBorrowedAmount = userVault.info[collateralAddress].debtBorrowedAmount;
+            address collateralAddress = collateralVaultAddresses[index];
+            CollateralVaultInfo storage userCollateralVault = userVault.info[collateralAddress];
 
             // To start we are assuming the user's CCR is 1, no collateral, no debt
-            userVault.info[collateralAddress].collateralCoverageRatio = baseCollateralCoverageRatio;
+            userCollateralVault.collateralCoverageRatio = BASE_COLLATERAL_COVERAGE_RATIO;
 
             // The collateral amount can't be 0, if it is then we are sure there is not debt too
-            if (collateralAmount == 0) continue;
-            uint256 collateralFairLPPrice = this.fetchCollateralPrice(
+            if (userCollateralVault.collateralAmount == 0) continue;
+            uint256 collateralFairLPPrice = summerTimeVaults.getCurrentFairLPTokenPrice(
                 collateralAddress
             );
-            userVault.info[collateralAddress].collateralValue = collateralAmount.mul(collateralFairLPPrice);
+            uint256 oldCollateralValue = userCollateralVault.collateralValue;
+            userCollateralVault.collateralValue = SafeMath.mul(
+                userCollateralVault.collateralAmount,
+                collateralFairLPPrice
+            );
             newTotalCollateralValue = SafeMath.add(
-                userVault.totalCollateralValue,
-                userVault.info[collateralAddress].collateralValue
+                SafeMath.sub(userVault.totalCollateralValue, oldCollateralValue),
+                userCollateralVault.collateralValue
             );
 
-
-            if (debtBorrowedAmount == 0) continue;
+            // If the user has any DEBT, update the accrual
+            if (userCollateralVault.debtBorrowedAmount == 0) continue;
             uint256 timeDifference = uint256(
-                currentTimestamp - userVault.info[collateralAddress].lastDebtUpdate
+                currentTimestamp - userCollateralVault.lastDebtUpdate
             );
             uint256 interestRateToBeApplied = timeDifference.mul(currentInterestPerSecond);
             uint256 accruedInterest = SafeMath.mul(
-                debtBorrowedAmount,
+                userCollateralVault.debtBorrowedAmount,
                 interestRateToBeApplied
             );
 
             // Update user's current DEBT amount
             uint256 newBorrowedDebtAmount = SafeMath.add(
-                debtBorrowedAmount,
+                userCollateralVault.debtBorrowedAmount,
                 accruedInterest
             );
             // TIP: Should be assert, using require to see issues faster
             require(
-                newBorrowedDebtAmount > debtBorrowedAmount,
-                "Deposit: new debtBorrowedAmount can not be less than the previous one"
+                newBorrowedDebtAmount > userCollateralVault.debtBorrowedAmount,
+                "CalcCRR: new debtBorrowedAmount can not be less than the previous one"
             );
-            userVault.info[collateralAddress].debtBorrowedAmount = newBorrowedDebtAmount;
-            newTotalDebtBorrowedAmount = newTotalDebtBorrowedAmount.add(newBorrowedDebtAmount);
+            userCollateralVault.debtBorrowedAmount = newBorrowedDebtAmount;
+            newTotalDebtBorrowedAmount = newTotalDebtBorrowedAmount.add(accruedInterest);
             // Don't forget to update the lastDebtUpdate timestamp
-            userVault.info[collateralAddress].lastDebtUpdate = currentTimestamp;
+            userCollateralVault.lastDebtUpdate = currentTimestamp;
 
             // Now calculate the current user's CCR
             uint256 thisCollateralCoverageRatio = getCollateralCoverageRatio(
-                userVault.info[collateralAddress].collateralValue,
-                userVault.info[collateralAddress].debtBorrowedAmount
+                userCollateralVault.collateralValue,
+                userCollateralVault.debtBorrowedAmount
             );
 
-            userVault.info[collateralAddress].collateralCoverageRatio = thisCollateralCoverageRatio;
+            userCollateralVault.collateralCoverageRatio = thisCollateralCoverageRatio;
             currentUserVaultCCRs = currentUserVaultCCRs.add(thisCollateralCoverageRatio);
         }
 
         userVault.totalCollateralValue = newTotalCollateralValue;
         userVault.totalDebtBorrowedAmount = newTotalDebtBorrowedAmount;
         // Get the user's average CCR by dividing by all of their vaults CCR
-        userVault.collateralCoverageRatio = currentUserVaultCCRs.div(vaultCollateralAddresses.length);
+        userVault.collateralCoverageRatio = currentUserVaultCCRs.div(collateralVaultAddresses.length);
         return (userVault.collateralCoverageRatio, newTotalCollateralValue, newTotalDebtBorrowedAmount);
     }
 
@@ -650,29 +511,6 @@ contract ShellDebtManager is
             .mul(collateralValue)
             .div(loanBorrowedValue);
         return collateralCoverageRatio;
-    }
-
-    function calculateCollateralChunks(UserVaultInfo storage userVault)
-        internal
-        view
-        returns (uint256[] memory)
-    {
-        uint256[] memory collateralChunks;
-        for (
-            uint256 index = 0;
-            index < vaultCollateralAddresses.length;
-            index++
-        ) {
-            address collateralAddress = vaultCollateralAddresses[index];
-            // Calculate what is the fractional contribution to
-            // each of the user's collateral
-            uint256 collateralFraction = SafeMath.div(
-                userVault.collateralValue[collateralAddress],
-                userVault.totalCollateralValue
-            );
-            collateralChunks[index] = collateralFraction;
-        }
-        return collateralChunks;
     }
 
     function perSecondInterestRate(uint256 interestRate)
@@ -699,12 +537,6 @@ contract ShellDebtManager is
     );
     event UserBorrowedDebt(uint256 vaultID, address vaultOwner, uint256 amount);
     event UserRepayedDebt(uint256 vaultID, address vaultOwner, uint256 amount);
-    event UserTransferredVault(
-        address previousVaultOwnerAddress,
-        address nextVaultOwnerAddress,
-        uint256 collateralAmount,
-        uint256 debtBorrowedAmount
-    );
     event BuyRiskyVault(
         uint256 vaultID,
         // address previousVaultOwner,

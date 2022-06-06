@@ -29,9 +29,9 @@ contract SummerTimeToken is ERC20, ERC20Capped, ERC20Permit, Ownable {
         ERC20("SummerTime Token", "SUMMER")
         ERC20Permit("SummerTime Token")
         // Maximum token cap is 500M
-        ERC20Capped(500 * oneMillion * 10**decimals())
+        ERC20Capped(500 * oneMillion * 10**uint256(decimals()))
     {
-        decimalsPlaces18 = 10**decimals();
+        decimalsPlaces18 = 10**uint256(decimals());
 
         // The complete breakdown of how the SUMMMER token will be distributed;
         Tokenomics[Allocations.MAXIMUM_SUPPLY] = 500 * oneMillion;
@@ -43,12 +43,12 @@ contract SummerTimeToken is ERC20, ERC20Capped, ERC20Permit, Ownable {
         // Tokenomics[Allocations.FOUNDATION] = 50 * oneMillion;
 
         // TypeError: decimalsPlaces18 Immutable variables cannot be read during contract creation time
-        _mint(msg.sender, Tokenomics[Allocations.PRESALE] * 10**decimals());
+        _mint(msg.sender, Tokenomics[Allocations.PRESALE] * 10**uint256(decimals()));
     }
 
     // TIP: Removed "virtual" to disallow any overriding of this function again
     function cap() public view override(ERC20Capped) returns (uint256) {
-        return Tokenomics[Allocations.MAXIMUM_SUPPLY] * 10**decimals();
+        return Tokenomics[Allocations.MAXIMUM_SUPPLY] * 10**uint256(decimals());
     }
 
     function _mint(address account, uint256 amount) internal override(ERC20) {
@@ -70,8 +70,4 @@ contract SummerTimeToken is ERC20, ERC20Capped, ERC20Permit, Ownable {
             "beforeTransfer: invalid recipient"
         );
     }
-
-    // function updateTokenomics(Allocations alloc, uint256 amount) public onlyOwner return (Boolean) {
-    //   Tokenomics[alloc] = amount ** decimalsPlaces18;
-    // }
 }

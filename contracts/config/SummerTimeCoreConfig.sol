@@ -4,6 +4,7 @@ pragma solidity ^0.6.6;
 import "../constants/Defaults.sol";
 
 contract SummerTimeCoreConfig is DefaultConfig {
+    uint256 public deployedDateTime;
     // Note: The treasury admin will be set as the deployer address
     address public platformTreasuryAdminAddress;
 
@@ -33,7 +34,7 @@ contract SummerTimeCoreConfig is DefaultConfig {
 
     // The base can be used to calculate a new CCR for a new vault,
     // or updating an existing one, equal to 1
-    uint256 public constant baseCollateralCoverageRatio = 1e18;
+    uint256 public constant BASE_COLLATERAL_COVERAGE_RATIO = 1e18;
 
     // Targeted CCR of a vault (1.2), once liquidation is triggered
     uint256 public targetedCollateralCoverageRatio = 12e17;

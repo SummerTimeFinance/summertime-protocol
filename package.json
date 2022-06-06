@@ -2,13 +2,6 @@
   "name": "summertime-protocol",
   "version": "0.1.0",
   "description": "**SummerTime Finance** is a decentralised stablecoin lending protocol leveraging over-collateralization of inaccessible or illiquid capital, with gamification using NFTs to spice things up.",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "prettier": "prettier --write 'contracts/**/*.sol'",
-    "remixd": "remixd -s /Users/0xnumbuhfive/Documents/summertime-protocol -u https://remix.ethereum.org",
-    "compile": "waffle"
-  },
   "keywords": [
     "DeFi",
     "Summertime",
@@ -18,6 +11,13 @@
   ],
   "author": "https://twitter.com/0xNumbuhFive",
   "license": "BUSL1.1",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prettier": "prettier --write 'contracts/**/*.sol'",
+    "remixd": "remixd -s /Users/0xnumbuhfive/Documents/summertime-protocol -u https://remix.ethereum.org",
+    "compile": "waffle"
+  },
   "dependencies": {
     "@chainlink/contracts": "^0.2.1",
     "@openzeppelin/contracts": "^3.4.1",
@@ -36,6 +36,7 @@
     "ethereum-waffle": "^3.4.0",
     "ethers": "^5.5.1",
     "hardhat": "^2.6.7",
+    "hardhat-contract-sizer": "^2.5.1",
     "prettier": "^2.4.1",
     "prettier-plugin-solidity": "^1.0.0-beta.17",
     "solc": "^0.6.6",
